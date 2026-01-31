@@ -31,6 +31,7 @@ interface BirdCardProps {
 export const BirdCard: React.FC<BirdCardProps> = ({
   bird,
   isSeen,
+  dateSeen,
   onToggleSeen,
   onPress,
 }) => {
@@ -54,6 +55,12 @@ export const BirdCard: React.FC<BirdCardProps> = ({
         <Text style={styles.scientificName} numberOfLines={1}>
           {bird.scientificName}
         </Text>
+        {isSeen && dateSeen && (
+          <View style={styles.dateContainer}>
+            <Ionicons name="calendar-outline" size={12} color="#4CAF50" />
+            <Text style={styles.dateText}>{formatDate(dateSeen)}</Text>
+          </View>
+        )}
       </View>
 
       <TouchableOpacity
