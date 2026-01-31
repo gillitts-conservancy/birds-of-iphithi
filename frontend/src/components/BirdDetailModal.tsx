@@ -300,6 +300,42 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
   },
+  dateSection: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  dateLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  dateLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4CAF50',
+    marginLeft: 8,
+  },
+  dateDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  dateValue: {
+    fontSize: 15,
+    color: '#333',
+  },
+  dateInput: {
+    fontSize: 15,
+    color: '#333',
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: '#f8fff8',
+  },
   notesSection: {
     backgroundColor: '#fff',
     borderRadius: 12,
