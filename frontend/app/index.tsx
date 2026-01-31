@@ -198,18 +198,18 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1a1a1a',
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1a1a1a',
   },
   loadingText: {
     marginTop: 12,
     fontSize: 15,
-    color: '#666',
+    color: '#aaa',
   },
   header: {
     backgroundColor: '#018440',
