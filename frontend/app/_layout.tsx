@@ -28,7 +28,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <ActivityIndicator size="large" color="#018440" />
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
