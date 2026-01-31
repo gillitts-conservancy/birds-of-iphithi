@@ -6,16 +6,21 @@ import {
   FlatList,
   ActivityIndicator,
   StatusBar,
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { birdsData, Bird } from '../src/data/birds';
 import { useChecklist } from '../src/hooks/useChecklist';
 import { BirdCard } from '../src/components/BirdCard';
 import { BirdDetailModal } from '../src/components/BirdDetailModal';
 import { QuickTools, FilterType } from '../src/components/QuickTools';
+import { useAuth } from '../src/context/AuthContext';
 
 export default function Index() {
   const insets = useSafeAreaInsets();
+  const { user, signOut } = useAuth();
   const {
     isLoading,
     toggleSeen,
@@ -27,6 +32,17 @@ export default function Index() {
     resetAll,
     seenCount,
   } = useChecklist();
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign Out', style: 'destructive', onPress: signOut },
+      ]
+    );
+  };
 
   const [selectedBird, setSelectedBird] = useState<Bird | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
