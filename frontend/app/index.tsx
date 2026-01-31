@@ -87,7 +87,7 @@ export default function Index() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <ActivityIndicator size="large" color="#018440" />
         <Text style={styles.loadingText}>Loading checklist...</Text>
       </View>
     );
