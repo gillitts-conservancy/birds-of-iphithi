@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   dateLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#4CAF50',
+    color: '#018440',
     marginLeft: 8,
   },
   dateDisplay: {
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#333',
     borderWidth: 1,
-    borderColor: '#4CAF50',
+    borderColor: '#018440',
     borderRadius: 8,
     padding: 10,
     backgroundColor: '#f8fff8',
