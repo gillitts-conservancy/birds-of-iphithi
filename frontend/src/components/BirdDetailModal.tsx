@@ -165,7 +165,7 @@ export const BirdDetailModal: React.FC<BirdDetailModalProps> = ({
               {isSeen && (
                 <View style={styles.dateSection}>
                   <View style={styles.dateLabelRow}>
-                    <Ionicons name="calendar" size={18} color="#4CAF50" />
+                    <Ionicons name="calendar" size={18} color="#018440" />
                     <Text style={styles.dateLabel}>Date Seen</Text>
                   </View>
                   {isEditingDate ? (
