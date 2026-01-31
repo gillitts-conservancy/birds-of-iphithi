@@ -218,7 +218,7 @@ export const BirdDetailModal: React.FC<BirdDetailModalProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1a1a1a',
   },
   header: {
     flexDirection: 'row',
@@ -226,9 +226,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    backgroundColor: '#018440',
   },
   closeButton: {
     width: 44,
@@ -239,7 +237,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#333',
+    color: '#fff',
   },
   content: {
     flex: 1,
@@ -250,21 +248,21 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: 250,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#333',
   },
   detailsContainer: {
     padding: 20,
   },
   speciesNumber: {
     fontSize: 14,
-    color: '#888',
+    color: '#aaa',
     fontWeight: '500',
     marginBottom: 4,
   },
   commonName: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#333',
+    color: '#fff',
     marginBottom: 4,
   },
   scientificName: {
