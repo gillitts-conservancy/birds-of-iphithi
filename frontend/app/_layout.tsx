@@ -1,14 +1,29 @@
 import 'react-native-reanimated';
 import React from 'react';
-import { Stack } from 'expo-router';
+import { Slot, useSegments, useRouter } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
-import { Redirect } from 'expo-router';
 
-function RootLayoutNav() {
+function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === 'login';
+
+    if (!isAuthenticated && !inAuthGroup) {
+      // Redirect to login if not authenticated
+      router.replace('/login');
+    } else if (isAuthenticated && inAuthGroup) {
+      // Redirect to home if authenticated but on login page
+      router.replace('/');
+    }
+  }, [isAuthenticated, isLoading, segments]);
 
   if (isLoading) {
     return (
@@ -19,11 +34,7 @@ function RootLayoutNav() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Redirect href="/login" />;
-  }
-
-  return <Redirect href="/" />;
+  return <>{children}</>;
 }
 
 export default function RootLayout() {
@@ -31,10 +42,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
         <AuthProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="login" />
-            <Stack.Screen name="index" />
-          </Stack>
+          <AuthGuard>
+            <Slot />
+          </AuthGuard>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
