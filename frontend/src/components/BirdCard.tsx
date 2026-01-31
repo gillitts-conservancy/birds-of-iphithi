@@ -57,7 +57,7 @@ export const BirdCard: React.FC<BirdCardProps> = ({
         </Text>
         {isSeen && (
           <View style={styles.dateContainer}>
-            <Ionicons name="calendar-outline" size={12} color="#2E7D32" />
+            <Ionicons name="calendar-outline" size={12} color="#018440" />
             <Text style={styles.dateText}>
               {dateSeen ? formatDate(dateSeen) : 'Date not recorded'}
             </Text>
