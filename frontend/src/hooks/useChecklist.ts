@@ -20,15 +20,17 @@ interface DatesState {
 export const useChecklist = () => {
   const [seenBirds, setSeenBirds] = useState<SeenState>({});
   const [notes, setNotes] = useState<NotesState>({});
+  const [dates, setDates] = useState<DatesState>({});
   const [isLoading, setIsLoading] = useState(true);
 
   // Load persisted data on mount
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [seenData, notesData] = await Promise.all([
+        const [seenData, notesData, datesData] = await Promise.all([
           AsyncStorage.getItem(SEEN_STORAGE_KEY),
           AsyncStorage.getItem(NOTES_STORAGE_KEY),
+          AsyncStorage.getItem(DATES_STORAGE_KEY),
         ]);
         
         if (seenData) {
@@ -36,6 +38,9 @@ export const useChecklist = () => {
         }
         if (notesData) {
           setNotes(JSON.parse(notesData));
+        }
+        if (datesData) {
+          setDates(JSON.parse(datesData));
         }
       } catch (error) {
         console.error('Failed to load checklist data:', error);
