@@ -17,14 +17,38 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bird } from '../data/birds';
 
+// Helper function to format date for display
+const formatDate = (isoDate: string): string => {
+  if (!isoDate) return '';
+  const date = new Date(isoDate);
+  return date.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+};
+
+// Helper function to format date for input
+const formatDateForInput = (isoDate: string): string => {
+  if (!isoDate) return '';
+  const date = new Date(isoDate);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 interface BirdDetailModalProps {
   bird: Bird | null;
   visible: boolean;
   isSeen: boolean;
   notes: string;
+  dateSeen: string;
   onClose: () => void;
   onToggleSeen: () => void;
   onUpdateNotes: (notes: string) => void;
+  onUpdateDate: (date: string) => void;
 }
 
 export const BirdDetailModal: React.FC<BirdDetailModalProps> = ({
