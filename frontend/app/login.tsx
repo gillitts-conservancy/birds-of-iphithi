@@ -6,132 +6,143 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  ImageBackground,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../src/context/AuthContext';
+
+const BACKGROUND_IMAGE = 'https://customer-assets.emergentagent.com/job_76160147-8fae-4df0-a459-029928f0f939/artifacts/v0z6ca62_Birds%20of%20iPhithi%20log%20in%20page%20background.png';
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { signInWithGoogle, isLoading } = useAuth();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.content}>
-        {/* Logo / Icon */}
-        <View style={styles.logoContainer}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="leaf" size={60} color="#fff" />
-          </View>
+    <ImageBackground
+      source={{ uri: BACKGROUND_IMAGE }}
+      style={styles.container}
+      resizeMode="cover"
+    >
+      <View style={[styles.content, { paddingTop: insets.top + 40 }]}>
+        {/* Title Section */}
+        <View style={styles.titleSection}>
+          <Text style={styles.conservancyText}>Gillitts Conservancy</Text>
+          <Text style={styles.title}>Birds of iPhithi</Text>
+          <Text style={styles.subtitle}>
+            Track and record the birds you've spotted at iPhithi Nature Reserve
+          </Text>
         </View>
-
-        {/* Title */}
-        <Text style={styles.title}>Birds of iPhithi</Text>
-        <Text style={styles.subtitle}>
-          Track and record the birds you've spotted at iPhithi Nature Reserve
-        </Text>
 
         {/* Features */}
         <View style={styles.features}>
           <View style={styles.featureItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+            <Ionicons name="checkmark-circle" size={20} color="#fff" />
             <Text style={styles.featureText}>Track your bird sightings</Text>
           </View>
           <View style={styles.featureItem}>
-            <Ionicons name="calendar" size={20} color="#4CAF50" />
+            <Ionicons name="calendar" size={20} color="#fff" />
             <Text style={styles.featureText}>Record dates & notes</Text>
           </View>
           <View style={styles.featureItem}>
-            <Ionicons name="phone-portrait" size={20} color="#4CAF50" />
+            <Ionicons name="phone-portrait" size={20} color="#fff" />
             <Text style={styles.featureText}>Works offline</Text>
           </View>
         </View>
 
         {/* Sign In Button */}
-        <TouchableOpacity
-          style={styles.googleButton}
-          onPress={signInWithGoogle}
-          disabled={isLoading}
-          activeOpacity={0.8}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#333" />
-          ) : (
-            <>
-              <Image
-                source={{ uri: 'https://www.google.com/favicon.ico' }}
-                style={styles.googleIcon}
-              />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
-            </>
-          )}
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={signInWithGoogle}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#333" />
+            ) : (
+              <>
+                <Image
+                  source={{ uri: 'https://www.google.com/favicon.ico' }}
+                  style={styles.googleIcon}
+                />
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </>
+            )}
+          </TouchableOpacity>
 
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Sign in to save your checklist progress
-        </Text>
+          {/* Footer */}
+          <Text style={styles.footer}>
+            Sign in to save your checklist progress
+          </Text>
+        </View>
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   content: {
     flex: 1,
     paddingHorizontal: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 50,
   },
-  logoContainer: {
-    marginBottom: 24,
-  },
-  iconCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#4CAF50',
+  titleSection: {
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
+    marginTop: 60,
+  },
+  conservancyText: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 28,
+    fontSize: 36,
     fontWeight: '700',
-    color: '#333',
-    marginBottom: 8,
+    color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+    marginBottom: 12,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 15,
-    color: '#666',
+    color: '#fff',
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 32,
     paddingHorizontal: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   features: {
-    marginBottom: 40,
     alignSelf: 'stretch',
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
     paddingHorizontal: 16,
   },
   featureText: {
-    fontSize: 15,
-    color: '#444',
+    fontSize: 16,
+    color: '#fff',
     marginLeft: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  buttonContainer: {
+    alignItems: 'center',
   },
   googleButton: {
     flexDirection: 'row',
@@ -143,12 +154,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     width: '100%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
   },
   googleIcon: {
     width: 20,
@@ -162,8 +171,11 @@ const styles = StyleSheet.create({
   },
   footer: {
     fontSize: 13,
-    color: '#888',
-    marginTop: 24,
+    color: '#fff',
+    marginTop: 20,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 });
