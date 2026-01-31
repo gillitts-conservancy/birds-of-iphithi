@@ -162,6 +162,37 @@ export const BirdDetailModal: React.FC<BirdDetailModalProps> = ({
                 </Text>
               </TouchableOpacity>
 
+              {isSeen && (
+                <View style={styles.dateSection}>
+                  <View style={styles.dateLabelRow}>
+                    <Ionicons name="calendar" size={18} color="#4CAF50" />
+                    <Text style={styles.dateLabel}>Date Seen</Text>
+                  </View>
+                  {isEditingDate ? (
+                    <TextInput
+                      style={styles.dateInput}
+                      value={localDate}
+                      onChangeText={handleDateChange}
+                      onBlur={handleDateBlur}
+                      placeholder="YYYY-MM-DD"
+                      placeholderTextColor="#999"
+                      keyboardType="numeric"
+                      autoFocus
+                    />
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.dateDisplay}
+                      onPress={() => setIsEditingDate(true)}
+                    >
+                      <Text style={styles.dateValue}>
+                        {dateSeen ? formatDate(dateSeen) : 'Tap to set date'}
+                      </Text>
+                      <Ionicons name="pencil" size={16} color="#888" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+
               <View style={styles.notesSection}>
                 <Text style={styles.notesLabel}>Notes</Text>
                 <TextInput
