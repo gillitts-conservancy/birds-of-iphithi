@@ -99,10 +99,22 @@ export default function Index() {
       
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.title}>Birds of iPhithi</Text>
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>Birds of iPhithi</Text>
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={handleLogout}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="person-circle-outline" size={28} color="#fff" />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.stats}>
           Seen: {seenCount} / Total: {birdsData.length}
         </Text>
+        {user && (
+          <Text style={styles.userEmail}>{user.email}</Text>
+        )}
       </View>
 
       {/* Quick Tools */}
