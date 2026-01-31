@@ -200,16 +200,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   title: {
     fontSize: 26,
     fontWeight: '700',
     color: '#fff',
     marginBottom: 4,
   },
+  profileButton: {
+    padding: 4,
+  },
   stats: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.85)',
     fontWeight: '500',
+  },
+  userEmail: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 2,
   },
   listContent: {
     paddingTop: 8,
