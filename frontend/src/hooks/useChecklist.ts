@@ -1,0 +1,111 @@
+import { useState, useEffect, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const SEEN_STORAGE_KEY = '@birds_of_iphithi_seen';
+const NOTES_STORAGE_KEY = '@birds_of_iphithi_notes';
+
+interface SeenState {
+  [speciesNumber: number]: boolean;
+}
+
+interface NotesState {
+  [speciesNumber: number]: string;
+}
+
+export const useChecklist = () => {
+  const [seenBirds, setSeenBirds] = useState<SeenState>({});
+  const [notes, setNotes] = useState<NotesState>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load persisted data on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [seenData, notesData] = await Promise.all([
+          AsyncStorage.getItem(SEEN_STORAGE_KEY),
+          AsyncStorage.getItem(NOTES_STORAGE_KEY),
+        ]);
+        
+        if (seenData) {
+          setSeenBirds(JSON.parse(seenData));
+        }
+        if (notesData) {
+          setNotes(JSON.parse(notesData));
+        }
+      } catch (error) {
+        console.error('Failed to load checklist data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Toggle seen status for a bird
+  const toggleSeen = useCallback(async (speciesNumber: number) => {
+    setSeenBirds((prev) => {
+      const newState = {
+        ...prev,
+        [speciesNumber]: !prev[speciesNumber],
+      };
+      // Persist to storage
+      AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(newState)).catch(
+        (error) => console.error('Failed to save seen state:', error)
+      );
+      return newState;
+    });
+  }, []);
+
+  // Update notes for a bird
+  const updateNotes = useCallback(async (speciesNumber: number, note: string) => {
+    setNotes((prev) => {
+      const newState = {
+        ...prev,
+        [speciesNumber]: note,
+      };
+      // Persist to storage
+      AsyncStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(newState)).catch(
+        (error) => console.error('Failed to save notes:', error)
+      );
+      return newState;
+    });
+  }, []);
+
+  // Reset all checkmarks
+  const resetAll = useCallback(async () => {
+    setSeenBirds({});
+    try {
+      await AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify({}));
+    } catch (error) {
+      console.error('Failed to reset seen state:', error);
+    }
+  }, []);
+
+  // Check if a bird is seen
+  const isSeen = useCallback(
+    (speciesNumber: number) => !!seenBirds[speciesNumber],
+    [seenBirds]
+  );
+
+  // Get notes for a bird
+  const getNotes = useCallback(
+    (speciesNumber: number) => notes[speciesNumber] || '',
+    [notes]
+  );
+
+  // Count seen birds
+  const seenCount = Object.values(seenBirds).filter(Boolean).length;
+
+  return {
+    seenBirds,
+    notes,
+    isLoading,
+    toggleSeen,
+    updateNotes,
+    resetAll,
+    isSeen,
+    getNotes,
+    seenCount,
+  };
+};
