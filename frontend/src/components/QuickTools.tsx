@@ -66,25 +66,33 @@ export const QuickTools: React.FC<QuickToolsProps> = ({
 
       <View style={styles.filterRow}>
         <View style={styles.filterButtons}>
-          {(['all', 'seen', 'unseen'] as FilterType[]).map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              style={[
-                styles.filterButton,
-                activeFilter === filter && styles.filterButtonActive,
-              ]}
-              onPress={() => onFilterChange(filter)}
-            >
-              <Text
+          {(['all', 'seen', 'unseen', 'byDate'] as FilterType[]).map((filter) => {
+            const labels: Record<FilterType, string> = {
+              all: 'All',
+              seen: 'Seen',
+              unseen: 'Unseen',
+              byDate: 'By Date',
+            };
+            return (
+              <TouchableOpacity
+                key={filter}
                 style={[
-                  styles.filterButtonText,
-                  activeFilter === filter && styles.filterButtonTextActive,
+                  styles.filterButton,
+                  activeFilter === filter && styles.filterButtonActive,
                 ]}
+                onPress={() => onFilterChange(filter)}
               >
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    activeFilter === filter && styles.filterButtonTextActive,
+                  ]}
+                >
+                  {labels[filter]}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <TouchableOpacity
