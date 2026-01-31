@@ -112,14 +112,14 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#2a2a2a',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#3a3a3a',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#3a3a3a',
     borderRadius: 10,
     paddingHorizontal: 12,
     marginBottom: 12,
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     fontSize: 15,
-    color: '#333',
+    color: '#fff',
   },
   filterRow: {
     flexDirection: 'row',
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   },
   filterButtons: {
     flexDirection: 'row',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#3a3a3a',
     borderRadius: 8,
     padding: 3,
     flex: 1,
@@ -154,20 +154,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterButtonActive: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: '#018440',
   },
   filterButtonText: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#666',
+    color: '#aaa',
   },
   filterButtonTextActive: {
-    color: '#333',
+    color: '#fff',
   },
   resetButton: {
     flexDirection: 'row',
@@ -175,7 +170,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
-    backgroundColor: '#fff0f0',
+    backgroundColor: 'rgba(255, 82, 82, 0.15)',
   },
   resetText: {
     fontSize: 13,
