@@ -98,13 +98,31 @@ export const useChecklist = () => {
     });
   }, []);
 
+  // Update date for a bird (for manual editing)
+  const updateDate = useCallback(async (speciesNumber: number, date: string) => {
+    setDates((prev) => {
+      const newState = {
+        ...prev,
+        [speciesNumber]: date,
+      };
+      AsyncStorage.setItem(DATES_STORAGE_KEY, JSON.stringify(newState)).catch(
+        (error) => console.error('Failed to save date:', error)
+      );
+      return newState;
+    });
+  }, []);
+
   // Reset all checkmarks
   const resetAll = useCallback(async () => {
     setSeenBirds({});
+    setDates({});
     try {
-      await AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify({}));
+      await Promise.all([
+        AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify({})),
+        AsyncStorage.setItem(DATES_STORAGE_KEY, JSON.stringify({})),
+      ]);
     } catch (error) {
-      console.error('Failed to reset seen state:', error);
+      console.error('Failed to reset data:', error);
     }
   }, []);
 
