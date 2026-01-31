@@ -118,7 +118,7 @@ export const BirdDetailModal: React.FC<BirdDetailModalProps> = ({
               onPress={onClose}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="close" size={28} color="#333" />
+              <Ionicons name="chevron-back" size={28} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Bird Details</Text>
             <View style={{ width: 44 }} />
