@@ -21,7 +21,9 @@ export default function Index() {
     toggleSeen,
     isSeen,
     getNotes,
+    getDateSeen,
     updateNotes,
+    updateDate,
     resetAll,
     seenCount,
   } = useChecklist();
