@@ -59,11 +59,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1a1a1a',
   },
   loadingText: {
     marginTop: 12,
     fontSize: 15,
-    color: '#666',
+    color: '#aaa',
   },
 });
