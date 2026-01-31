@@ -56,20 +56,45 @@ export const BirdDetailModal: React.FC<BirdDetailModalProps> = ({
   visible,
   isSeen,
   notes,
+  dateSeen,
   onClose,
   onToggleSeen,
   onUpdateNotes,
+  onUpdateDate,
 }) => {
   const insets = useSafeAreaInsets();
   const [localNotes, setLocalNotes] = useState(notes);
+  const [localDate, setLocalDate] = useState(formatDateForInput(dateSeen));
+  const [isEditingDate, setIsEditingDate] = useState(false);
 
   useEffect(() => {
     setLocalNotes(notes);
-  }, [notes, bird]);
+    setLocalDate(formatDateForInput(dateSeen));
+  }, [notes, dateSeen, bird]);
 
   const handleNotesBlur = () => {
     if (localNotes !== notes) {
       onUpdateNotes(localNotes);
+    }
+  };
+
+  const handleDateChange = (text: string) => {
+    // Allow only numbers and hyphens
+    const cleaned = text.replace(/[^0-9-]/g, '');
+    setLocalDate(cleaned);
+  };
+
+  const handleDateBlur = () => {
+    setIsEditingDate(false);
+    // Validate and save date
+    if (localDate) {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (dateRegex.test(localDate)) {
+        const newDate = new Date(localDate);
+        if (!isNaN(newDate.getTime())) {
+          onUpdateDate(newDate.toISOString());
+        }
+      }
     }
   };
 
