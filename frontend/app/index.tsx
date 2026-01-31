@@ -157,7 +157,7 @@ export default function Index() {
             <Text style={styles.emptyText}>
               {searchQuery
                 ? 'No birds match your search'
-                : activeFilter === 'seen'
+                : activeFilter === 'seen' || activeFilter === 'byDate'
                 ? "You haven't seen any birds yet"
                 : activeFilter === 'unseen'
                 ? 'You have seen all birds!'
