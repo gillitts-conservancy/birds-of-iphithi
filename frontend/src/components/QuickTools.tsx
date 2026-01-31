@@ -44,13 +44,13 @@ export const QuickTools: React.FC<QuickToolsProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={18} color="#888" style={styles.searchIcon} />
+        <Ionicons name="search" size={18} color="#aaa" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           value={searchQuery}
           onChangeText={onSearchChange}
           placeholder="Search birds..."
-          placeholderTextColor="#999"
+          placeholderTextColor="#777"
           autoCapitalize="none"
           autoCorrect={false}
         />
@@ -59,7 +59,7 @@ export const QuickTools: React.FC<QuickToolsProps> = ({
             onPress={() => onSearchChange('')}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="close-circle" size={18} color="#888" />
+            <Ionicons name="close-circle" size={18} color="#aaa" />
           </TouchableOpacity>
         )}
       </View>
