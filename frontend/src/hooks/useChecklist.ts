@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SEEN_STORAGE_KEY = '@birds_of_iphithi_seen';
 const NOTES_STORAGE_KEY = '@birds_of_iphithi_notes';
+const DATES_STORAGE_KEY = '@birds_of_iphithi_dates';
 
 interface SeenState {
   [speciesNumber: number]: boolean;
@@ -10,6 +11,10 @@ interface SeenState {
 
 interface NotesState {
   [speciesNumber: number]: string;
+}
+
+interface DatesState {
+  [speciesNumber: number]: string; // ISO date string
 }
 
 export const useChecklist = () => {
