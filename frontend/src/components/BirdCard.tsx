@@ -9,9 +9,21 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Bird } from '../data/birds';
 
+// Helper function to format date
+const formatDate = (isoDate: string): string => {
+  if (!isoDate) return '';
+  const date = new Date(isoDate);
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
 interface BirdCardProps {
   bird: Bird;
   isSeen: boolean;
+  dateSeen: string;
   onToggleSeen: () => void;
   onPress: () => void;
 }
