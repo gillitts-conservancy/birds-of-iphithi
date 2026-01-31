@@ -123,6 +123,17 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 2,
   },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  dateText: {
+    fontSize: 11,
+    color: '#4CAF50',
+    marginLeft: 4,
+    fontWeight: '500',
+  },
   checkboxContainer: {
     padding: 8,
   },
