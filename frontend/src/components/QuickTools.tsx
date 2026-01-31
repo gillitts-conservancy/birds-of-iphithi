@@ -143,11 +143,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     borderRadius: 8,
     padding: 3,
+    flex: 1,
+    marginRight: 8,
   },
   filterButton: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 6,
+    flex: 1,
+    alignItems: 'center',
   },
   filterButtonActive: {
     backgroundColor: '#fff',
