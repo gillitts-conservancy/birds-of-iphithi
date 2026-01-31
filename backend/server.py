@@ -164,7 +164,6 @@ async def exchange_session(request: Request, response: Response):
         })
     
     # Create session
-    from datetime import timedelta
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
     
     await db.user_sessions.insert_one({
