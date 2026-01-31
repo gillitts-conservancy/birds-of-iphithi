@@ -54,34 +54,36 @@ export const useChecklist = () => {
 
   // Toggle seen status for a bird
   const toggleSeen = useCallback(async (speciesNumber: number) => {
-    const wasAlreadySeen = seenBirds[speciesNumber];
-    
     setSeenBirds((prev) => {
-      const newState = {
+      const wasAlreadySeen = prev[speciesNumber];
+      const newSeenState = {
         ...prev,
-        [speciesNumber]: !prev[speciesNumber],
+        [speciesNumber]: !wasAlreadySeen,
       };
-      // Persist to storage
-      AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(newState)).catch(
+      
+      // Persist seen state to storage
+      AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(newSeenState)).catch(
         (error) => console.error('Failed to save seen state:', error)
       );
-      return newState;
-    });
 
-    // If marking as seen, record the date
-    if (!wasAlreadySeen) {
-      setDates((prev) => {
-        const newState = {
-          ...prev,
-          [speciesNumber]: new Date().toISOString(),
-        };
-        AsyncStorage.setItem(DATES_STORAGE_KEY, JSON.stringify(newState)).catch(
-          (error) => console.error('Failed to save date:', error)
-        );
-        return newState;
-      });
-    }
-  }, [seenBirds]);
+      // If marking as seen (not unseen), record the date
+      if (!wasAlreadySeen) {
+        const newDate = new Date().toISOString();
+        setDates((prevDates) => {
+          const newDatesState = {
+            ...prevDates,
+            [speciesNumber]: newDate,
+          };
+          AsyncStorage.setItem(DATES_STORAGE_KEY, JSON.stringify(newDatesState)).catch(
+            (error) => console.error('Failed to save date:', error)
+          );
+          return newDatesState;
+        });
+      }
+
+      return newSeenState;
+    });
+  }, []);
 
   // Update notes for a bird
   const updateNotes = useCallback(async (speciesNumber: number, note: string) => {
