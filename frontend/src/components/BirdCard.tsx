@@ -55,10 +55,12 @@ export const BirdCard: React.FC<BirdCardProps> = ({
         <Text style={styles.scientificName} numberOfLines={1}>
           {bird.scientificName}
         </Text>
-        {isSeen && dateSeen && (
+        {isSeen && (
           <View style={styles.dateContainer}>
-            <Ionicons name="calendar-outline" size={12} color="#4CAF50" />
-            <Text style={styles.dateText}>{formatDate(dateSeen)}</Text>
+            <Ionicons name="calendar-outline" size={12} color="#2E7D32" />
+            <Text style={styles.dateText}>
+              {dateSeen ? formatDate(dateSeen) : 'Date not recorded'}
+            </Text>
           </View>
         )}
       </View>
