@@ -62,6 +62,7 @@ export default function Index() {
     <BirdCard
       bird={item}
       isSeen={isSeen(item.speciesNumber)}
+      dateSeen={getDateSeen(item.speciesNumber)}
       onToggleSeen={() => toggleSeen(item.speciesNumber)}
       onPress={() => setSelectedBird(item)}
     />
