@@ -138,18 +138,27 @@ export const useChecklist = () => {
     [notes]
   );
 
+  // Get date seen for a bird
+  const getDateSeen = useCallback(
+    (speciesNumber: number) => dates[speciesNumber] || '',
+    [dates]
+  );
+
   // Count seen birds
   const seenCount = Object.values(seenBirds).filter(Boolean).length;
 
   return {
     seenBirds,
     notes,
+    dates,
     isLoading,
     toggleSeen,
     updateNotes,
+    updateDate,
     resetAll,
     isSeen,
     getNotes,
+    getDateSeen,
     seenCount,
   };
 };
