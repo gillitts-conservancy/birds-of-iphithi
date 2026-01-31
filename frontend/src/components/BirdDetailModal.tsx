@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   scientificName: {
     fontSize: 16,
     fontStyle: 'italic',
-    color: '#666',
+    color: '#ccc',
     marginBottom: 20,
   },
   seenToggle: {
