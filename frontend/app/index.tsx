@@ -50,9 +50,7 @@ export default function Index() {
 
   // Sort birds by speciesNumber ascending and apply filters
   const filteredBirds = useMemo(() => {
-    let birds = [...birdsData].sort(
-      (a, b) => a.speciesNumber - b.speciesNumber
-    );
+    let birds = [...birdsData];
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -64,15 +62,33 @@ export default function Index() {
       );
     }
 
-    // Apply seen/unseen filter
+    // Apply seen/unseen/byDate filter
     if (activeFilter === 'seen') {
       birds = birds.filter((bird) => isSeen(bird.speciesNumber));
+      // Sort by species number
+      birds.sort((a, b) => a.speciesNumber - b.speciesNumber);
     } else if (activeFilter === 'unseen') {
       birds = birds.filter((bird) => !isSeen(bird.speciesNumber));
+      // Sort by species number
+      birds.sort((a, b) => a.speciesNumber - b.speciesNumber);
+    } else if (activeFilter === 'byDate') {
+      // Filter to only seen birds and sort by date (most recent first)
+      birds = birds.filter((bird) => isSeen(bird.speciesNumber));
+      birds.sort((a, b) => {
+        const dateA = getDateSeen(a.speciesNumber);
+        const dateB = getDateSeen(b.speciesNumber);
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+    } else {
+      // Default: sort by species number
+      birds.sort((a, b) => a.speciesNumber - b.speciesNumber);
     }
 
     return birds;
-  }, [searchQuery, activeFilter, isSeen]);
+  }, [searchQuery, activeFilter, isSeen, getDateSeen]);
 
   const renderBirdCard = ({ item }: { item: Bird }) => (
     <BirdCard
