@@ -129,6 +129,7 @@ export default function Index() {
         visible={!!selectedBird}
         isSeen={selectedBird ? isSeen(selectedBird.speciesNumber) : false}
         notes={selectedBird ? getNotes(selectedBird.speciesNumber) : ''}
+        dateSeen={selectedBird ? getDateSeen(selectedBird.speciesNumber) : ''}
         onClose={() => setSelectedBird(null)}
         onToggleSeen={() => {
           if (selectedBird) {
@@ -138,6 +139,11 @@ export default function Index() {
         onUpdateNotes={(notes) => {
           if (selectedBird) {
             updateNotes(selectedBird.speciesNumber, notes);
+          }
+        }}
+        onUpdateDate={(date) => {
+          if (selectedBird) {
+            updateDate(selectedBird.speciesNumber, date);
           }
         }}
       />
