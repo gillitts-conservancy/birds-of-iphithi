@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 15,
-    color: '#888',
+    color: '#aaa',
     textAlign: 'center',
   },
 });
