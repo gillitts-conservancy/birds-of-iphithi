@@ -54,6 +54,8 @@ export const useChecklist = () => {
 
   // Toggle seen status for a bird
   const toggleSeen = useCallback(async (speciesNumber: number) => {
+    const wasAlreadySeen = seenBirds[speciesNumber];
+    
     setSeenBirds((prev) => {
       const newState = {
         ...prev,
@@ -65,7 +67,21 @@ export const useChecklist = () => {
       );
       return newState;
     });
-  }, []);
+
+    // If marking as seen, record the date
+    if (!wasAlreadySeen) {
+      setDates((prev) => {
+        const newState = {
+          ...prev,
+          [speciesNumber]: new Date().toISOString(),
+        };
+        AsyncStorage.setItem(DATES_STORAGE_KEY, JSON.stringify(newState)).catch(
+          (error) => console.error('Failed to save date:', error)
+        );
+        return newState;
+      });
+    }
+  }, [seenBirds]);
 
   // Update notes for a bird
   const updateNotes = useCallback(async (speciesNumber: number, note: string) => {
