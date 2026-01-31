@@ -292,8 +292,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   checkboxChecked: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+    backgroundColor: '#018440',
+    borderColor: '#018440',
   },
   seenText: {
     fontSize: 16,
