@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#E6F4EA',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 11,
-    color: '#1B5E20',
+    color: '#018440',
     marginLeft: 4,
     fontWeight: '600',
   },
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+    backgroundColor: '#018440',
+    borderColor: '#018440',
   },
 });
