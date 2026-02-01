@@ -10,7 +10,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
 
-    "build": "npx expo export --platform web",
+    "build": "npx expo export --platform web --output-dir dist",
     "serve:dist": "npx serve dist"
   },
   "dependencies": {
