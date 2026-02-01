@@ -11,11 +11,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { birdsData, Bird } from '../src/data/birds';
+import { birdsData, Bird, BirdColor, BirdSize, BirdHabitat } from '../src/data/birds';
 import { useChecklist } from '../src/hooks/useChecklist';
 import { BirdCard } from '../src/components/BirdCard';
 import { BirdDetailModal } from '../src/components/BirdDetailModal';
 import { QuickTools, FilterType } from '../src/components/QuickTools';
+import { BirdFilters } from '../src/components/BirdFilters';
 import { useAuth } from '../src/context/AuthContext';
 
 export default function Index() {
@@ -47,6 +48,37 @@ export default function Index() {
   const [selectedBird, setSelectedBird] = useState<Bird | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  
+  // New filter states
+  const [selectedColors, setSelectedColors] = useState<BirdColor[]>([]);
+  const [selectedSize, setSelectedSize] = useState<BirdSize | null>(null);
+  const [selectedHabitats, setSelectedHabitats] = useState<BirdHabitat[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Filter handlers
+  const handleColorToggle = (color: BirdColor) => {
+    setSelectedColors((prev) =>
+      prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
+    );
+  };
+
+  const handleSizeSelect = (size: BirdSize | null) => {
+    setSelectedSize(size);
+  };
+
+  const handleHabitatToggle = (habitat: BirdHabitat) => {
+    setSelectedHabitats((prev) =>
+      prev.includes(habitat) ? prev.filter((h) => h !== habitat) : [...prev, habitat]
+    );
+  };
+
+  const handleClearAllFilters = () => {
+    setSelectedColors([]);
+    setSelectedSize(null);
+    setSelectedHabitats([]);
+  };
+
+  const hasActiveAttributeFilters = selectedColors.length > 0 || selectedSize !== null || selectedHabitats.length > 0;
 
   // Sort birds by speciesNumber ascending and apply filters
   const filteredBirds = useMemo(() => {
