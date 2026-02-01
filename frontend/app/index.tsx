@@ -193,6 +193,49 @@ export default function Index() {
         onReset={resetAll}
       />
 
+      {/* Filter Toggle Button */}
+      <TouchableOpacity
+        style={styles.filterToggle}
+        onPress={() => setShowFilters(!showFilters)}
+      >
+        <Ionicons 
+          name={showFilters ? "options" : "options-outline"} 
+          size={18} 
+          color={hasActiveAttributeFilters ? "#018440" : "#aaa"} 
+        />
+        <Text style={[
+          styles.filterToggleText,
+          hasActiveAttributeFilters && styles.filterToggleTextActive
+        ]}>
+          {showFilters ? 'Hide Filters' : 'Filter by Colour, Size, Habitat'}
+        </Text>
+        {hasActiveAttributeFilters && (
+          <View style={styles.filterBadge}>
+            <Text style={styles.filterBadgeText}>
+              {selectedColors.length + (selectedSize ? 1 : 0) + selectedHabitats.length}
+            </Text>
+          </View>
+        )}
+        <Ionicons 
+          name={showFilters ? "chevron-up" : "chevron-down"} 
+          size={16} 
+          color="#aaa" 
+        />
+      </TouchableOpacity>
+
+      {/* Bird Filters */}
+      {showFilters && (
+        <BirdFilters
+          selectedColors={selectedColors}
+          selectedSize={selectedSize}
+          selectedHabitats={selectedHabitats}
+          onColorToggle={handleColorToggle}
+          onSizeSelect={handleSizeSelect}
+          onHabitatToggle={handleHabitatToggle}
+          onClearAll={handleClearAllFilters}
+        />
+      )}
+
       {/* Bird List */}
       <FlatList
         data={filteredBirds}
