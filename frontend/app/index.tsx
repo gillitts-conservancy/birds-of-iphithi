@@ -94,6 +94,25 @@ export default function Index() {
       );
     }
 
+    // Apply color filter (AND logic - bird must have at least one of the selected colors)
+    if (selectedColors.length > 0) {
+      birds = birds.filter((bird) =>
+        selectedColors.some((color) => bird.primaryColors.includes(color))
+      );
+    }
+
+    // Apply size filter
+    if (selectedSize) {
+      birds = birds.filter((bird) => bird.size === selectedSize);
+    }
+
+    // Apply habitat filter (AND logic - bird must have at least one of the selected habitats)
+    if (selectedHabitats.length > 0) {
+      birds = birds.filter((bird) =>
+        selectedHabitats.some((habitat) => bird.habitats.includes(habitat))
+      );
+    }
+
     // Apply seen/unseen/byDate filter
     if (activeFilter === 'seen') {
       birds = birds.filter((bird) => isSeen(bird.speciesNumber));
