@@ -334,6 +334,37 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     marginTop: 2,
   },
+  filterToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#2a2a2a',
+    borderBottomWidth: 1,
+    borderBottomColor: '#3a3a3a',
+  },
+  filterToggleText: {
+    fontSize: 13,
+    color: '#aaa',
+    marginLeft: 8,
+    flex: 1,
+  },
+  filterToggleTextActive: {
+    color: '#018440',
+  },
+  filterBadge: {
+    backgroundColor: '#018440',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginRight: 8,
+  },
+  filterBadgeText: {
+    fontSize: 11,
+    color: '#fff',
+    fontWeight: '600',
+  },
   listContent: {
     paddingTop: 8,
   },
