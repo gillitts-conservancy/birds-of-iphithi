@@ -139,7 +139,7 @@ export default function Index() {
     }
 
     return birds;
-  }, [searchQuery, activeFilter, isSeen, getDateSeen]);
+  }, [searchQuery, activeFilter, isSeen, getDateSeen, selectedColors, selectedSize, selectedHabitats]);
 
   const renderBirdCard = ({ item }: { item: Bird }) => (
     <BirdCard
