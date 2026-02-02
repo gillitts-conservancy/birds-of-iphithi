@@ -2,7 +2,11 @@
   command = "npm --prefix frontend run build"
   publish = "frontend/dist"
 
+[functions]
+  directory = "___no_functions___"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
