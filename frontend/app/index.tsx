@@ -22,6 +22,7 @@ import { useAuth } from '../src/context/AuthContext';
 export default function Index() {
   const insets = useSafeAreaInsets();
   const { user, signOut } = useAuth();
+
   const {
     isLoading,
     toggleSeen,
@@ -32,23 +33,27 @@ export default function Index() {
     updateDate,
     resetAll,
     seenCount,
+    syncStatus,
   } = useChecklist();
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign Out', style: 'destructive', onPress: signOut },
-      ]
-    );
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', style: 'destructive', onPress: signOut },
+    ]);
+  };
+
+  const getSyncLabel = () => {
+    if (!user) return 'Offline – saved locally';
+    if (syncStatus === 'syncing') return 'Syncing…';
+    if (syncStatus === 'error') return 'Sync paused – will retry';
+    return 'All changes synced';
   };
 
   const [selectedBird, setSelectedBird] = useState<Bird | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  
+
   // New filter states
   const [selectedColors, setSelectedColors] = useState<BirdColor[]>([]);
   const [selectedSize, setSelectedSize] = useState<BirdSize | null>(null);
@@ -78,7 +83,8 @@ export default function Index() {
     setSelectedHabitats([]);
   };
 
-  const hasActiveAttributeFilters = selectedColors.length > 0 || selectedSize !== null || selectedHabitats.length > 0;
+  const hasActiveAttributeFilters =
+    selectedColors.length > 0 || selectedSize !== null || selectedHabitats.length > 0;
 
   // Sort birds by speciesNumber ascending and apply filters
   const filteredBirds = useMemo(() => {
@@ -163,7 +169,7 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#4CAF50" />
-      
+
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <View style={styles.headerTop}>
@@ -176,12 +182,14 @@ export default function Index() {
             <Ionicons name="person-circle-outline" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
+
         <Text style={styles.stats}>
           Seen: {seenCount} / Total: {birdsData.length}
         </Text>
-        {user && (
-          <Text style={styles.userEmail}>{user.email}</Text>
-        )}
+
+        {user && <Text style={styles.userEmail}>{user.email}</Text>}
+
+        <Text style={styles.syncStatus}>{getSyncLabel()}</Text>
       </View>
 
       {/* Quick Tools */}
@@ -194,19 +202,18 @@ export default function Index() {
       />
 
       {/* Filter Toggle Button */}
-      <TouchableOpacity
-        style={styles.filterToggle}
-        onPress={() => setShowFilters(!showFilters)}
-      >
-        <Ionicons 
-          name={showFilters ? "options" : "options-outline"} 
-          size={18} 
-          color={hasActiveAttributeFilters ? "#018440" : "#aaa"} 
+      <TouchableOpacity style={styles.filterToggle} onPress={() => setShowFilters(!showFilters)}>
+        <Ionicons
+          name={showFilters ? 'options' : 'options-outline'}
+          size={18}
+          color={hasActiveAttributeFilters ? '#018440' : '#aaa'}
         />
-        <Text style={[
-          styles.filterToggleText,
-          hasActiveAttributeFilters && styles.filterToggleTextActive
-        ]}>
+        <Text
+          style={[
+            styles.filterToggleText,
+            hasActiveAttributeFilters && styles.filterToggleTextActive,
+          ]}
+        >
           {showFilters ? 'Hide Filters' : 'Filter by Colour, Size, Habitat'}
         </Text>
         {hasActiveAttributeFilters && (
@@ -216,10 +223,10 @@ export default function Index() {
             </Text>
           </View>
         )}
-        <Ionicons 
-          name={showFilters ? "chevron-up" : "chevron-down"} 
-          size={16} 
-          color="#aaa" 
+        <Ionicons
+          name={showFilters ? 'chevron-up' : 'chevron-down'}
+          size={16}
+          color="#aaa"
         />
       </TouchableOpacity>
 
@@ -241,10 +248,7 @@ export default function Index() {
         data={filteredBirds}
         keyExtractor={(item) => item.speciesNumber.toString()}
         renderItem={renderBirdCard}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingBottom: insets.bottom + 16 },
-        ]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 16 }]}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -274,9 +278,9 @@ export default function Index() {
             toggleSeen(selectedBird.speciesNumber);
           }
         }}
-        onUpdateNotes={(notes) => {
+        onUpdateNotes={(notesValue) => {
           if (selectedBird) {
-            updateNotes(selectedBird.speciesNumber, notes);
+            updateNotes(selectedBird.speciesNumber, notesValue);
           }
         }}
         onUpdateDate={(date) => {
@@ -333,6 +337,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(255,255,255,0.7)',
     marginTop: 2,
+  },
+  syncStatus: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.65)',
+    marginTop: 4,
   },
   filterToggle: {
     flexDirection: 'row',
