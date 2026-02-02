@@ -1,31 +1,46 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
-  ActivityIndicator,
   ImageBackground,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../src/context/AuthContext';
+import { supabase } from '../src/supabase';
 
-const BACKGROUND_IMAGE = 'https://customer-assets.emergentagent.com/job_76160147-8fae-4df0-a459-029928f0f939/artifacts/v0z6ca62_Birds%20of%20iPhithi%20log%20in%20page%20background.png';
+const BACKGROUND_IMAGE =
+  'https://customer-assets.emergentagent.com/job_76160147-8fae-4df0-a459-029928f0f939/artifacts/v0z6ca62_Birds%20of%20iPhithi%20log%20in%20page%20background.png';
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
-  const { signInWithGoogle, isLoading } = useAuth();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const sendMagicLink = async () => {
+    if (!email) return;
+
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    setLoading(false);
+
+    if (!error) {
+      setSent(true);
+    }
+  };
 
   return (
-    <ImageBackground
-      source={{ uri: BACKGROUND_IMAGE }}
-      style={styles.container}
-      resizeMode="cover"
-    >
+    <ImageBackground source={{ uri: BACKGROUND_IMAGE }} style={styles.container}>
       <View style={[styles.content, { paddingTop: insets.top + 40 }]}>
-        {/* Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.conservancyText}>Gillitts Conservancy</Text>
           <Text style={styles.title}>Birds of iPhithi</Text>
@@ -34,7 +49,6 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        {/* Features */}
         <View style={styles.features}>
           <View style={styles.featureItem}>
             <Ionicons name="checkmark-circle" size={20} color="#fff" />
@@ -50,31 +64,42 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        {/* Sign In Button */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.googleButton}
-            onPress={signInWithGoogle}
-            disabled={isLoading}
-            activeOpacity={0.8}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#333" />
-            ) : (
-              <>
-                <Image
-                  source={{ uri: 'https://www.google.com/favicon.ico' }}
-                  style={styles.googleIcon}
-                />
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
-              </>
-            )}
-          </TouchableOpacity>
+          {sent ? (
+            <Text style={styles.footer}>
+              Check your email for the login link
+            </Text>
+          ) : (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Email address"
+                placeholderTextColor="#555"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
 
-          {/* Footer */}
-          <Text style={styles.footer}>
-            Sign in to save your checklist progress
-          </Text>
+              <TouchableOpacity
+                style={styles.emailButton}
+                onPress={sendMagicLink}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#333" />
+                ) : (
+                  <Text style={styles.emailButtonText}>
+                    Send login link
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              <Text style={styles.footer}>
+                We’ll email you a secure sign-in link
+              </Text>
+            </>
+          )}
         </View>
       </View>
     </ImageBackground>
@@ -82,89 +107,40 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   content: {
     flex: 1,
     paddingHorizontal: 32,
     justifyContent: 'space-between',
     paddingBottom: 50,
   },
-  titleSection: {
-    alignItems: 'center',
-    marginTop: 60,
-  },
-  conservancyText: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#fff',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#fff',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 4,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#fff',
-    textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 16,
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  features: {
-    alignSelf: 'stretch',
-  },
+  titleSection: { alignItems: 'center', marginTop: 60 },
+  conservancyText: { fontSize: 18, color: '#fff', marginBottom: 8 },
+  title: { fontSize: 36, fontWeight: '700', color: '#fff', marginBottom: 12 },
+  subtitle: { fontSize: 15, color: '#fff', textAlign: 'center' },
+  features: {},
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
-    paddingHorizontal: 16,
   },
-  featureText: {
-    fontSize: 16,
-    color: '#fff',
-    marginLeft: 12,
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+  featureText: { fontSize: 16, color: '#fff', marginLeft: 12 },
+  buttonContainer: { alignItems: 'center' },
+  input: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 14,
+    width: '100%',
+    marginBottom: 12,
   },
-  buttonContainer: {
-    alignItems: 'center',
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  emailButton: {
     backgroundColor: '#fff',
     borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 24,
     width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 6,
+    alignItems: 'center',
   },
-  googleIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 12,
-  },
-  googleButtonText: {
+  emailButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
@@ -174,8 +150,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginTop: 20,
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
   },
 });
