@@ -22,9 +22,9 @@ export interface Bird {
 export const birdsData: Bird[] = [
   {
     speciesNumber: 1,
-    commonName: "Common Ostrich",
-    scientificName: "Struthio camelus",
-    photoUrl: "https://picsum.photos/seed/bird1/400/300",
+    commonName: "Black-collared barbet",
+    scientificName: "Lybius torquatus",
+    photoUrl: "https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/black-collared_barbet.webp",
     primaryColors: ["black", "white"],
     size: "large",
     habitats: ["grassland", "open-sky"],
