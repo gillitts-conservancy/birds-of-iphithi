@@ -8,6 +8,7 @@ import {
   StatusBar,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,6 +35,9 @@ export default function Index() {
     resetAll,
     seenCount,
     syncStatus,
+    seenBirds,
+    notes,
+    dates,
   } = useChecklist();
 
   const handleLogout = () => {
@@ -48,6 +52,62 @@ export default function Index() {
     if (syncStatus === 'syncing') return 'Syncing…';
     if (syncStatus === 'error') return 'Sync paused – will retry';
     return 'All changes synced';
+  };
+
+  const exportSightings = () => {
+    // Web/PWA download
+    if (Platform.OS !== 'web' || typeof document === 'undefined') {
+      Alert.alert('Export not available', 'Export is currently available on the web app only.');
+      return;
+    }
+
+    // Build an export payload from LOCAL state (works offline)
+    const seenSpeciesNumbers = Object.keys(seenBirds)
+      .map((k) => Number(k))
+      .filter((n) => Number.isFinite(n) && seenBirds[n]);
+
+    const birdBySpecies = new Map<number, Bird>();
+    birdsData.forEach((b) => birdBySpecies.set(b.speciesNumber, b));
+
+    const sightings = seenSpeciesNumbers
+      .sort((a, b) => a - b)
+      .map((speciesNumber) => {
+        const bird = birdBySpecies.get(speciesNumber);
+        return {
+          speciesNumber,
+          bird_id: String(speciesNumber),
+          commonName: bird?.commonName ?? '',
+          scientificName: bird?.scientificName ?? '',
+          firstSeenAt: dates[speciesNumber] ?? '',
+          notes: notes[speciesNumber] ?? '',
+        };
+      });
+
+    const payload = {
+      app: 'Birds of iPhithi',
+      schemaVersion: 1,
+      exportedAt: new Date().toISOString(),
+      user: user?.email ?? null,
+      totals: {
+        seen: sightings.length,
+        totalBirds: birdsData.length,
+      },
+      sightings,
+    };
+
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+
+    const yyyyMmDd = new Date().toISOString().slice(0, 10);
+    const safeEmail = (user?.email ?? 'offline').replace(/[^a-z0-9@._-]/gi, '_');
+    const filename = `birds-of-iphithi-sightings_${safeEmail}_${yyyyMmDd}.json`;
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const [selectedBird, setSelectedBird] = useState<Bird | null>(null);
@@ -122,14 +182,11 @@ export default function Index() {
     // Apply seen/unseen/byDate filter
     if (activeFilter === 'seen') {
       birds = birds.filter((bird) => isSeen(bird.speciesNumber));
-      // Sort by species number
       birds.sort((a, b) => a.speciesNumber - b.speciesNumber);
     } else if (activeFilter === 'unseen') {
       birds = birds.filter((bird) => !isSeen(bird.speciesNumber));
-      // Sort by species number
       birds.sort((a, b) => a.speciesNumber - b.speciesNumber);
     } else if (activeFilter === 'byDate') {
-      // Filter to only seen birds and sort by date (most recent first)
       birds = birds.filter((bird) => isSeen(bird.speciesNumber));
       birds.sort((a, b) => {
         const dateA = getDateSeen(a.speciesNumber);
@@ -140,7 +197,6 @@ export default function Index() {
         return new Date(dateB).getTime() - new Date(dateA).getTime();
       });
     } else {
-      // Default: sort by species number
       birds.sort((a, b) => a.speciesNumber - b.speciesNumber);
     }
 
@@ -174,13 +230,24 @@ export default function Index() {
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Birds of iPhithi</Text>
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={handleLogout}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="person-circle-outline" size={28} color="#fff" />
-          </TouchableOpacity>
+
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={exportSightings}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="download-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={handleLogout}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="person-circle-outline" size={28} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <Text style={styles.stats}>
@@ -223,11 +290,7 @@ export default function Index() {
             </Text>
           </View>
         )}
-        <Ionicons
-          name={showFilters ? 'chevron-up' : 'chevron-down'}
-          size={16}
-          color="#aaa"
-        />
+        <Ionicons name={showFilters ? 'chevron-up' : 'chevron-down'} size={16} color="#aaa" />
       </TouchableOpacity>
 
       {/* Bird Filters */}
@@ -319,14 +382,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
   title: {
     fontSize: 26,
     fontWeight: '700',
     color: '#fff',
     marginBottom: 4,
-  },
-  profileButton: {
-    padding: 4,
   },
   stats: {
     fontSize: 14,
