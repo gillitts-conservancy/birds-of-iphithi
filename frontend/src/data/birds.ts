@@ -2,8 +2,18 @@
 // Each bird requires: speciesNumber (unique), commonName, scientificName, photoUrl
 // Notes field is optional and can be edited by users in the app
 
-export type BirdColor = 'black' | 'brown' | 'white' | 'grey' | 'green' | 'yellow' | 'red' | 'blue';
+export type BirdColor =
+  | 'black'
+  | 'brown'
+  | 'white'
+  | 'grey'
+  | 'green'
+  | 'yellow'
+  | 'red'
+  | 'blue';
+
 export type BirdSize = 'small' | 'medium' | 'large';
+
 export type BirdHabitat = 'garden' | 'trees' | 'grassland' | 'wetland' | 'open-sky';
 
 export interface Bird {
@@ -17,97 +27,177 @@ export interface Bird {
   notes?: string;
 }
 
-// Sample birds data - sorted by speciesNumber
-// Replace this with your actual iPhithi species list
+// Test birds data - arranged by Roberts species number
+// NOTE: primaryColors + size are placeholders for now (not provided in the bird list doc)
 export const birdsData: Bird[] = [
   {
-    speciesNumber: 1,
-    commonName: "Black-collared barbet",
-    scientificName: "Lybius torquatus",
-    photoUrl: "https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/black-collared_barbet.webp",
-    primaryColors: ["black", "white"],
-    size: "large",
-    habitats: ["grassland", "open-sky"],
+    speciesNumber: 94,
+    commonName: 'Hadeda Ibis',
+    scientificName: 'Bostrychia hagedash',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/hadeda_ibis.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['garden', 'grassland', 'wetland'],
   },
   {
-    speciesNumber: 2,
-    commonName: "Egyptian Goose",
-    scientificName: "Alopochen aegyptiaca",
-    photoUrl: "https://picsum.photos/seed/bird2/400/300",
-    primaryColors: ["brown", "white"],
-    size: "medium",
-    habitats: ["wetland", "grassland"],
+    speciesNumber: 118,
+    commonName: 'Spur-winged Goose',
+    scientificName: 'Plectropterus gambensis',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/spurwing_goose.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['wetland', 'grassland'],
   },
   {
-    speciesNumber: 3,
-    commonName: "Hadada Ibis",
-    scientificName: "Bostrychia hagedash",
-    photoUrl: "https://picsum.photos/seed/bird3/400/300",
-    primaryColors: ["brown", "green"],
-    size: "medium",
-    habitats: ["garden", "grassland"],
+    speciesNumber: 127,
+    commonName: 'Yellow-billed Kite',
+    scientificName: 'Milvus aegyptius',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/Yellow-billed-kite.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['open-sky', 'grassland', 'trees'],
   },
   {
-    speciesNumber: 4,
-    commonName: "African Fish Eagle",
-    scientificName: "Haliaeetus vocifer",
-    photoUrl: "https://picsum.photos/seed/bird4/400/300",
-    primaryColors: ["brown", "white"],
-    size: "large",
-    habitats: ["wetland", "open-sky"],
+    speciesNumber: 224,
+    commonName: 'Common Moorhen',
+    scientificName: 'Gallinula chloropus',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/common_moorhen.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['wetland'],
   },
   {
-    speciesNumber: 5,
-    commonName: "Crowned Lapwing",
-    scientificName: "Vanellus coronatus",
-    photoUrl: "https://picsum.photos/seed/bird5/400/300",
-    primaryColors: ["brown", "white"],
-    size: "medium",
-    habitats: ["grassland", "open-sky"],
+    speciesNumber: 371,
+    commonName: 'Purple-crested Turaco',
+    scientificName: 'Tauraco porphyreolophus',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/purple-crested_turaco.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['trees', 'garden'],
   },
   {
-    speciesNumber: 6,
-    commonName: "Laughing Dove",
-    scientificName: "Spilopelia senegalensis",
-    photoUrl: "https://picsum.photos/seed/bird6/400/300",
-    primaryColors: ["brown", "grey"],
-    size: "small",
-    habitats: ["garden", "trees"],
+    speciesNumber: 377,
+    commonName: 'Red-chested Cuckoo',
+    scientificName: 'Cuculus solitarius',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/red-chested_cuckoo.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['trees', 'garden'],
   },
   {
-    speciesNumber: 7,
-    commonName: "Lilac-breasted Roller",
-    scientificName: "Coracias caudatus",
-    photoUrl: "https://picsum.photos/seed/bird7/400/300",
-    primaryColors: ["blue", "green"],
-    size: "medium",
-    habitats: ["trees", "open-sky"],
+    speciesNumber: 384,
+    commonName: 'Emerald Cuckoo',
+    scientificName: 'Chrysococcyx cupreus',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/emerald_cuckoo.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['trees'],
   },
   {
-    speciesNumber: 8,
-    commonName: "Pied Kingfisher",
-    scientificName: "Ceryle rudis",
-    photoUrl: "https://picsum.photos/seed/bird8/400/300",
-    primaryColors: ["black", "white"],
-    size: "small",
-    habitats: ["wetland"],
+    speciesNumber: 424,
+    commonName: 'Speckled Mousebird',
+    scientificName: 'Colius striatus',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/speckled_mousebird.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['garden', 'trees'],
   },
   {
-    speciesNumber: 9,
-    commonName: "Fork-tailed Drongo",
-    scientificName: "Dicrurus adsimilis",
-    photoUrl: "https://picsum.photos/seed/bird9/400/300",
-    primaryColors: ["black"],
-    size: "small",
-    habitats: ["trees", "garden"],
+    speciesNumber: 435,
+    commonName: 'Brown-hooded Kingfisher',
+    scientificName: 'Halcyon albiventris',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/brown-hooded_kingfisher.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['trees', 'garden', 'wetland'],
   },
   {
-    speciesNumber: 10,
-    commonName: "Cape Glossy Starling",
-    scientificName: "Lamprotornis nitens",
-    photoUrl: "https://picsum.photos/seed/bird10/400/300",
-    primaryColors: ["blue", "green"],
-    size: "small",
-    habitats: ["garden", "trees"],
+    speciesNumber: 455,
+    commonName: 'Trumpeter Hornbill',
+    scientificName: 'Bycanistes bucinator',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/trumpeter-hornbill.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['trees'],
+  },
+  {
+    speciesNumber: 464,
+    commonName: 'Black-collared Barbet',
+    scientificName: 'Lybius torquatus',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/black-collared_barbet.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['trees', 'garden'],
+  },
+  {
+    speciesNumber: 466,
+    commonName: 'White-eared Barbet',
+    scientificName: 'Stactolaema leucotis',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/White-eared-barbet.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['trees', 'garden'],
+  },
+  {
+    speciesNumber: 482,
+    commonName: 'Cardinal Woodpecker',
+    scientificName: 'Dendropicos fuscescens',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/cardinal_woodpecker.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['trees', 'garden'],
+  },
+  {
+    speciesNumber: 545,
+    commonName: 'Black-headed Oriole',
+    scientificName: 'Oriolus larvatus',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/black-headed_oriole.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['trees', 'garden'],
+  },
+  {
+    speciesNumber: 577,
+    commonName: 'Olive Thrush',
+    scientificName: 'Turdus olivaceus',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/olive_thrush.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['garden', 'trees'],
+  },
+  {
+    speciesNumber: 807,
+    commonName: 'Thick-billed Weaver',
+    scientificName: 'Amblyospiza albifrons',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/thick-billed_weaver.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['wetland', 'grassland'],
+  },
+  {
+    speciesNumber: 810,
+    commonName: 'Spectacled Weaver',
+    scientificName: 'Ploceus ocularis',
+    photoUrl:
+      'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/spectacled_weaver.webp',
+    primaryColors: ['brown'],
+    size: 'medium',
+    habitats: ['trees', 'garden'],
   },
 ];
