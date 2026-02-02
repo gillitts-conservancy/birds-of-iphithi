@@ -1,6 +1,7 @@
 [build]
-  command = "npm --prefix frontend run build"
-  publish = "frontend/dist"
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
 
 [functions]
   directory = "___no_functions___"
@@ -9,4 +10,5 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
 
