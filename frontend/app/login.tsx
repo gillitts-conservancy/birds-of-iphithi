@@ -39,8 +39,13 @@ export default function LoginScreen() {
   };
 
   return (
-    <ImageBackground source={{ uri: BACKGROUND_IMAGE }} style={styles.container}>
+    <ImageBackground
+      source={{ uri: BACKGROUND_IMAGE }}
+      style={styles.container}
+      resizeMode="cover"
+    >
       <View style={[styles.content, { paddingTop: insets.top + 40 }]}>
+        {/* Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.conservancyText}>Gillitts Conservancy</Text>
           <Text style={styles.title}>Birds of iPhithi</Text>
@@ -49,6 +54,7 @@ export default function LoginScreen() {
           </Text>
         </View>
 
+        {/* Features */}
         <View style={styles.features}>
           <View style={styles.featureItem}>
             <Ionicons name="checkmark-circle" size={20} color="#fff" />
@@ -64,6 +70,7 @@ export default function LoginScreen() {
           </View>
         </View>
 
+        {/* Login */}
         <View style={styles.buttonContainer}>
           {sent ? (
             <Text style={styles.footer}>
@@ -85,6 +92,7 @@ export default function LoginScreen() {
                 style={styles.emailButton}
                 onPress={sendMagicLink}
                 disabled={loading}
+                activeOpacity={0.8}
               >
                 {loading ? (
                   <ActivityIndicator color="#333" />
@@ -107,25 +115,53 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+  },
   content: {
     flex: 1,
     paddingHorizontal: 32,
     justifyContent: 'space-between',
     paddingBottom: 50,
   },
-  titleSection: { alignItems: 'center', marginTop: 60 },
-  conservancyText: { fontSize: 18, color: '#fff', marginBottom: 8 },
-  title: { fontSize: 36, fontWeight: '700', color: '#fff', marginBottom: 12 },
-  subtitle: { fontSize: 15, color: '#fff', textAlign: 'center' },
+  titleSection: {
+    alignItems: 'center',
+    marginTop: 60,
+  },
+  conservancyText: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#fff',
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 16,
+  },
   features: {},
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
   },
-  featureText: { fontSize: 16, color: '#fff', marginLeft: 12 },
-  buttonContainer: { alignItems: 'center' },
+  featureText: {
+    fontSize: 16,
+    color: '#fff',
+    marginLeft: 12,
+  },
+  buttonContainer: {
+    alignItems: 'center',
+  },
   input: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -134,11 +170,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emailButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#fff',
     borderRadius: 12,
     paddingVertical: 16,
     width: '100%',
-    alignItems: 'center',
   },
   emailButtonText: {
     fontSize: 16,
