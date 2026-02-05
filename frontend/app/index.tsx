@@ -76,7 +76,7 @@ export default function Index() {
 
   const handleHabitatToggle = (habitat: BirdHabitat) => {
     setSelectedHabitats((prev) =>
-      prev.includes(habitat) ? prev.filter((h) => h !== habitat) : [...prev, habitat]
+      prev.includes(habitat) ? prev.filter((h) => c !== habitat) : [...prev, habitat]
     );
   };
 
@@ -167,6 +167,10 @@ export default function Index() {
     );
   }
 
+  const selectedSpecies = selectedBird?.speciesNumber ?? null;
+  const selectedSightingsCount = selectedSpecies ? getSightingsCount(selectedSpecies) : 0;
+  const selectedLastSeen = selectedSpecies ? getLastSeen(selectedSpecies) : '';
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#018440" />
@@ -236,6 +240,9 @@ export default function Index() {
         isSeen={selectedBird ? isSeen(selectedBird.speciesNumber) : false}
         notes={selectedBird ? getNotes(selectedBird.speciesNumber) : ''}
         dateSeen={selectedBird ? getDateSeen(selectedBird.speciesNumber) : ''}
+        sightingsCount={selectedSightingsCount}
+        lastSeen={selectedLastSeen}
+        syncStatus={syncStatus}
         onClose={() => setSelectedBird(null)}
         onToggleSeen={() => selectedBird && toggleSeen(selectedBird.speciesNumber)}
         onUpdateNotes={(v) => selectedBird && updateNotes(selectedBird.speciesNumber, v)}
@@ -256,21 +263,10 @@ const styles = StyleSheet.create({
   stats: { fontSize: 14, color: 'rgba(255,255,255,0.85)' },
   userEmail: { fontSize: 12, color: 'rgba(255,255,255,0.7)' },
   syncStatus: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 },
-  filterToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#2a2a2a',
-  },
+  filterToggle: { flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#2a2a2a' },
   filterToggleText: { marginLeft: 8, color: '#aaa', flex: 1 },
   filterToggleTextActive: { color: '#018440' },
-  filterHint: {
-    fontSize: 12,
-    color: '#aaa',
-    textAlign: 'center',
-    paddingVertical: 6,
-    backgroundColor: '#1f1f1f',
-  },
+  filterHint: { fontSize: 12, color: '#aaa', textAlign: 'center', paddingVertical: 6, backgroundColor: '#1f1f1f' },
   list: { flex: 1, backgroundColor: BG },
   listContent: { flexGrow: 1, backgroundColor: BG },
   emptyFill: { flex: 1, backgroundColor: BG },
