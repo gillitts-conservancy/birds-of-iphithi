@@ -1,23 +1,12 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Bird } from '../data/birds';
 
-// Helper function to format date
 const formatDate = (isoDate: string): string => {
   if (!isoDate) return '';
   const date = new Date(isoDate);
-  return date.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 interface BirdCardProps {
@@ -27,12 +16,12 @@ interface BirdCardProps {
   onToggleSeen: () => void;
   onPress: () => void;
 
-  /**
-   * Option B (Sightings Event Log):
-   * Optional handler for logging an additional sighting event.
-   * If not provided, the "+ Seen again" button is not shown.
-   */
+  // Option B actions
   onSeenAgain?: (speciesNumber: number) => void;
+
+  // Option B display
+  sightingsCount?: number;
+  lastSeen?: string;
 }
 
 export const BirdCard: React.FC<BirdCardProps> = ({
@@ -42,18 +31,14 @@ export const BirdCard: React.FC<BirdCardProps> = ({
   onToggleSeen,
   onPress,
   onSeenAgain,
+  sightingsCount,
+  lastSeen,
 }) => {
+  const showStats = (sightingsCount ?? 0) > 0 || !!lastSeen;
+
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <Image
-        source={{ uri: bird.photoUrl }}
-        style={styles.thumbnail}
-        resizeMode="cover"
-      />
+    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
+      <Image source={{ uri: bird.photoUrl }} style={styles.thumbnail} resizeMode="cover" />
 
       <View style={styles.info}>
         <Text style={styles.speciesNumber}>#{bird.speciesNumber}</Text>
@@ -69,9 +54,22 @@ export const BirdCard: React.FC<BirdCardProps> = ({
         {isSeen && (
           <View style={styles.dateContainer}>
             <Ionicons name="calendar-outline" size={12} color="#018440" />
-            <Text style={styles.dateText}>
-              {dateSeen ? formatDate(dateSeen) : 'Date not recorded'}
-            </Text>
+            <Text style={styles.dateText}>{dateSeen ? formatDate(dateSeen) : 'Date not recorded'}</Text>
+          </View>
+        )}
+
+        {/* Option B: derived stats display */}
+        {showStats && (
+          <View style={styles.statsRow}>
+            {(sightingsCount ?? 0) > 0 && (
+              <Text style={styles.statsText}>Seen {(sightingsCount ?? 0)}×</Text>
+            )}
+            {!!lastSeen && (
+              <Text style={styles.statsText}>
+                {(sightingsCount ?? 0) > 0 ? ' · ' : ''}
+                Last seen {formatDate(lastSeen!)}
+              </Text>
+            )}
           </View>
         )}
 
@@ -101,9 +99,7 @@ export const BirdCard: React.FC<BirdCardProps> = ({
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <View style={[styles.checkbox, isSeen && styles.checkboxChecked]}>
-          {isSeen && (
-            <Ionicons name="checkmark" size={18} color="#fff" />
-          )}
+          {isSeen && <Ionicons name="checkmark" size={18} color="#fff" />}
         </View>
       </TouchableOpacity>
     </TouchableOpacity>
@@ -125,33 +121,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  thumbnail: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    backgroundColor: '#e0e0e0',
-  },
-  info: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  speciesNumber: {
-    fontSize: 11,
-    color: '#888',
-    fontWeight: '500',
-  },
-  commonName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginTop: 2,
-  },
-  scientificName: {
-    fontSize: 13,
-    fontStyle: 'italic',
-    color: '#666',
-    marginTop: 2,
-  },
+  thumbnail: { width: 60, height: 60, borderRadius: 8, backgroundColor: '#e0e0e0' },
+  info: { flex: 1, marginLeft: 12 },
+  speciesNumber: { fontSize: 11, color: '#888', fontWeight: '500' },
+  commonName: { fontSize: 16, fontWeight: '600', color: '#333', marginTop: 2 },
+  scientificName: { fontSize: 13, fontStyle: 'italic', color: '#666', marginTop: 2 },
   dateContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -162,14 +136,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignSelf: 'flex-start',
   },
-  dateText: {
-    fontSize: 11,
-    color: '#018440',
-    marginLeft: 4,
-    fontWeight: '600',
-  },
+  dateText: { fontSize: 11, color: '#018440', marginLeft: 4, fontWeight: '600' },
 
-  // Option B button styling (minimal, consistent with existing palette)
+  statsRow: { marginTop: 6, flexDirection: 'row', flexWrap: 'wrap' },
+  statsText: { fontSize: 11, color: '#666', fontWeight: '600' },
+
   seenAgainButton: {
     marginTop: 8,
     flexDirection: 'row',
@@ -180,16 +151,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  seenAgainText: {
-    marginLeft: 6,
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#018440',
-  },
+  seenAgainText: { marginLeft: 6, fontSize: 12, fontWeight: '700', color: '#018440' },
 
-  checkboxContainer: {
-    padding: 8,
-  },
+  checkboxContainer: { padding: 8 },
   checkbox: {
     width: 28,
     height: 28,
@@ -199,8 +163,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: '#018440',
-    borderColor: '#018440',
-  },
+  checkboxChecked: { backgroundColor: '#018440', borderColor: '#018440' },
 });
