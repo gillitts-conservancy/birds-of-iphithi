@@ -176,7 +176,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Turdus olivaceus',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/olive_thrush.webp',
-    primaryColors: ['brown', 'grey', 'white'],
+    primaryColors: ['brown', 'orange', 'yellow'],
     size: 'medium',
     habitats: ['garden', 'trees'],
   },
