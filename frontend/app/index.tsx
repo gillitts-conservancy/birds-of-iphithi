@@ -35,9 +35,6 @@ export default function Index() {
     resetAll,
     seenCount,
     syncStatus,
-    seenBirds,
-    notes,
-    dates,
   } = useChecklist();
 
   const handleLogout = () => {
@@ -54,73 +51,15 @@ export default function Index() {
     return 'All changes synced';
   };
 
-  const exportSightings = () => {
-    // Web/PWA download
-    if (Platform.OS !== 'web' || typeof document === 'undefined') {
-      Alert.alert('Export not available', 'Export is currently available on the web app only.');
-      return;
-    }
-
-    // Build an export payload from LOCAL state (works offline)
-    const seenSpeciesNumbers = Object.keys(seenBirds)
-      .map((k) => Number(k))
-      .filter((n) => Number.isFinite(n) && seenBirds[n]);
-
-    const birdBySpecies = new Map<number, Bird>();
-    birdsData.forEach((b) => birdBySpecies.set(b.speciesNumber, b));
-
-    const sightings = seenSpeciesNumbers
-      .sort((a, b) => a - b)
-      .map((speciesNumber) => {
-        const bird = birdBySpecies.get(speciesNumber);
-        return {
-          speciesNumber,
-          bird_id: String(speciesNumber),
-          commonName: bird?.commonName ?? '',
-          scientificName: bird?.scientificName ?? '',
-          firstSeenAt: dates[speciesNumber] ?? '',
-          notes: notes[speciesNumber] ?? '',
-        };
-      });
-
-    const payload = {
-      app: 'Birds of iPhithi',
-      schemaVersion: 1,
-      exportedAt: new Date().toISOString(),
-      user: user?.email ?? null,
-      totals: {
-        seen: sightings.length,
-        totalBirds: birdsData.length,
-      },
-      sightings,
-    };
-
-    const json = JSON.stringify(payload, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-
-    const yyyyMmDd = new Date().toISOString().slice(0, 10);
-    const safeEmail = (user?.email ?? 'offline').replace(/[^a-z0-9@._-]/gi, '_');
-    const filename = `birds-of-iphithi-sightings_${safeEmail}_${yyyyMmDd}.json`;
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const [selectedBird, setSelectedBird] = useState<Bird | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 
-  // New filter states
   const [selectedColors, setSelectedColors] = useState<BirdColor[]>([]);
   const [selectedSize, setSelectedSize] = useState<BirdSize | null>(null);
   const [selectedHabitats, setSelectedHabitats] = useState<BirdHabitat[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Filter handlers
   const handleColorToggle = (color: BirdColor) => {
     setSelectedColors((prev) =>
       prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
@@ -146,11 +85,10 @@ export default function Index() {
   const hasActiveAttributeFilters =
     selectedColors.length > 0 || selectedSize !== null || selectedHabitats.length > 0;
 
-  // Sort birds by speciesNumber ascending and apply filters
   const filteredBirds = useMemo(() => {
     let birds = [...birdsData];
 
-    // Apply search filter
+    // Search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       birds = birds.filter(
@@ -160,32 +98,30 @@ export default function Index() {
       );
     }
 
-    // Apply color filter (AND logic - bird must have at least one of the selected colors)
+    // COLOUR = AND
     if (selectedColors.length > 0) {
       birds = birds.filter((bird) =>
-        selectedColors.some((color) => bird.primaryColors.includes(color))
+        selectedColors.every((color) => bird.primaryColors.includes(color))
       );
     }
 
-    // Apply size filter
+    // SIZE
     if (selectedSize) {
       birds = birds.filter((bird) => bird.size === selectedSize);
     }
 
-    // Apply habitat filter (AND logic - bird must have at least one of the selected habitats)
+    // HABITAT = OR
     if (selectedHabitats.length > 0) {
       birds = birds.filter((bird) =>
         selectedHabitats.some((habitat) => bird.habitats.includes(habitat))
       );
     }
 
-    // Apply seen/unseen/byDate filter
+    // Seen filters
     if (activeFilter === 'seen') {
       birds = birds.filter((bird) => isSeen(bird.speciesNumber));
-      birds.sort((a, b) => a.speciesNumber - b.speciesNumber);
     } else if (activeFilter === 'unseen') {
       birds = birds.filter((bird) => !isSeen(bird.speciesNumber));
-      birds.sort((a, b) => a.speciesNumber - b.speciesNumber);
     } else if (activeFilter === 'byDate') {
       birds = birds.filter((bird) => isSeen(bird.speciesNumber));
       birds.sort((a, b) => {
@@ -196,12 +132,19 @@ export default function Index() {
         if (!dateB) return -1;
         return new Date(dateB).getTime() - new Date(dateA).getTime();
       });
-    } else {
-      birds.sort((a, b) => a.speciesNumber - b.speciesNumber);
     }
 
+    birds.sort((a, b) => a.speciesNumber - b.speciesNumber);
     return birds;
-  }, [searchQuery, activeFilter, isSeen, getDateSeen, selectedColors, selectedSize, selectedHabitats]);
+  }, [
+    searchQuery,
+    activeFilter,
+    isSeen,
+    getDateSeen,
+    selectedColors,
+    selectedSize,
+    selectedHabitats,
+  ]);
 
   const renderBirdCard = ({ item }: { item: Bird }) => (
     <BirdCard
@@ -226,40 +169,15 @@ export default function Index() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#4CAF50" />
 
-      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <View style={styles.headerTop}>
-          <Text style={styles.title}>Birds of iPhithi</Text>
-
-          <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={exportSightings}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="download-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={handleLogout}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="person-circle-outline" size={28} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
+        <Text style={styles.title}>Birds of iPhithi</Text>
         <Text style={styles.stats}>
           Seen: {seenCount} / Total: {birdsData.length}
         </Text>
-
         {user && <Text style={styles.userEmail}>{user.email}</Text>}
-
         <Text style={styles.syncStatus}>{getSyncLabel()}</Text>
       </View>
 
-      {/* Quick Tools */}
       <QuickTools
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -268,7 +186,6 @@ export default function Index() {
         onReset={resetAll}
       />
 
-      {/* Filter Toggle Button */}
       <TouchableOpacity style={styles.filterToggle} onPress={() => setShowFilters(!showFilters)}>
         <Ionicons
           name={showFilters ? 'options' : 'options-outline'}
@@ -283,17 +200,15 @@ export default function Index() {
         >
           {showFilters ? 'Hide Filters' : 'Filter by Colour, Size, Habitat'}
         </Text>
-        {hasActiveAttributeFilters && (
-          <View style={styles.filterBadge}>
-            <Text style={styles.filterBadgeText}>
-              {selectedColors.length + (selectedSize ? 1 : 0) + selectedHabitats.length}
-            </Text>
-          </View>
-        )}
         <Ionicons name={showFilters ? 'chevron-up' : 'chevron-down'} size={16} color="#aaa" />
       </TouchableOpacity>
 
-      {/* Bird Filters */}
+      {hasActiveAttributeFilters && (
+        <Text style={styles.filterHint}>
+          Matching all selected colours · any selected habitat
+        </Text>
+      )}
+
       {showFilters && (
         <BirdFilters
           selectedColors={selectedColors}
@@ -306,29 +221,13 @@ export default function Index() {
         />
       )}
 
-      {/* Bird List */}
       <FlatList
         data={filteredBirds}
         keyExtractor={(item) => item.speciesNumber.toString()}
         renderItem={renderBirdCard}
-        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 16 }]}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {searchQuery
-                ? 'No birds match your search'
-                : activeFilter === 'seen' || activeFilter === 'byDate'
-                ? "You haven't seen any birds yet"
-                : activeFilter === 'unseen'
-                ? 'You have seen all birds!'
-                : 'No birds available'}
-            </Text>
-          </View>
-        }
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
       />
 
-      {/* Detail Modal */}
       <BirdDetailModal
         bird={selectedBird}
         visible={!!selectedBird}
@@ -336,125 +235,36 @@ export default function Index() {
         notes={selectedBird ? getNotes(selectedBird.speciesNumber) : ''}
         dateSeen={selectedBird ? getDateSeen(selectedBird.speciesNumber) : ''}
         onClose={() => setSelectedBird(null)}
-        onToggleSeen={() => {
-          if (selectedBird) {
-            toggleSeen(selectedBird.speciesNumber);
-          }
-        }}
-        onUpdateNotes={(notesValue) => {
-          if (selectedBird) {
-            updateNotes(selectedBird.speciesNumber, notesValue);
-          }
-        }}
-        onUpdateDate={(date) => {
-          if (selectedBird) {
-            updateDate(selectedBird.speciesNumber, date);
-          }
-        }}
+        onToggleSeen={() => selectedBird && toggleSeen(selectedBird.speciesNumber)}
+        onUpdateNotes={(v) => selectedBird && updateNotes(selectedBird.speciesNumber, v)}
+        onUpdateDate={(d) => selectedBird && updateDate(selectedBird.speciesNumber, d)}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1a1a1a',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1a1a1a',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 15,
-    color: '#aaa',
-  },
-  header: {
-    backgroundColor: '#018440',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  stats: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
-    fontWeight: '500',
-  },
-  userEmail: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 2,
-  },
-  syncStatus: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.65)',
-    marginTop: 4,
-  },
+  container: { flex: 1, backgroundColor: '#1a1a1a' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, color: '#aaa' },
+  header: { backgroundColor: '#018440', paddingHorizontal: 16, paddingBottom: 16 },
+  title: { fontSize: 26, fontWeight: '700', color: '#fff' },
+  stats: { fontSize: 14, color: 'rgba(255,255,255,0.85)' },
+  userEmail: { fontSize: 12, color: 'rgba(255,255,255,0.7)' },
+  syncStatus: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 },
   filterToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    padding: 10,
     backgroundColor: '#2a2a2a',
-    borderBottomWidth: 1,
-    borderBottomColor: '#3a3a3a',
   },
-  filterToggleText: {
-    fontSize: 13,
-    color: '#aaa',
-    marginLeft: 8,
-    flex: 1,
-  },
-  filterToggleTextActive: {
-    color: '#018440',
-  },
-  filterBadge: {
-    backgroundColor: '#018440',
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginRight: 8,
-  },
-  filterBadgeText: {
-    fontSize: 11,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  listContent: {
-    paddingTop: 8,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 32,
-  },
-  emptyText: {
-    fontSize: 15,
+  filterToggleText: { marginLeft: 8, color: '#aaa', flex: 1 },
+  filterToggleTextActive: { color: '#018440' },
+  filterHint: {
+    fontSize: 12,
     color: '#aaa',
     textAlign: 'center',
+    paddingVertical: 6,
+    backgroundColor: '#1f1f1f',
   },
 });
