@@ -41,13 +41,6 @@ export default function Index() {
     getLastSeen,
   } = useChecklist();
 
-  const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: signOut },
-    ]);
-  };
-
   const getSyncLabel = () => {
     if (!user) return 'Offline – saved locally';
     if (syncStatus === 'syncing') return 'Syncing…';
@@ -74,9 +67,10 @@ export default function Index() {
     setSelectedSize(size);
   };
 
+  // FIXED: h !== habitat (was c !== habitat)
   const handleHabitatToggle = (habitat: BirdHabitat) => {
     setSelectedHabitats((prev) =>
-      prev.includes(habitat) ? prev.filter((h) => c !== habitat) : [...prev, habitat]
+      prev.includes(habitat) ? prev.filter((h) => h !== habitat) : [...prev, habitat]
     );
   };
 
