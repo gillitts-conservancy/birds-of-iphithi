@@ -9,8 +9,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-
     "build": "npx expo export --platform web --output-dir dist",
+    "postbuild": "node scripts/copy-pwa-icons.mjs",
     "serve:dist": "npx serve dist"
   },
   "dependencies": {
@@ -51,7 +51,6 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2",
-
     "serve": "^14.2.4"
   },
   "private": true,
