@@ -96,7 +96,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Chrysococcyx cupreus',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/emerald_cuckoo.webp',
-    primaryColors: ['green', 'yellow'],
+    primaryColors: ['green', 'red', 'white', 'black'],
     size: 'medium',
     habitats: ['trees'],
   },
@@ -126,7 +126,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Bycanistes bucinator',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/trumpeter-hornbill.webp',
-    primaryColors: ['black', 'white', 'yellow'],
+    primaryColors: ['black', 'white', 'red'],
     size: 'medium',
     habitats: ['trees'],
   },
@@ -136,7 +136,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Lybius torquatus',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/black-collared_barbet.webp',
-    primaryColors: ['black', 'red', 'yellow'],
+    primaryColors: ['black', 'red', 'white'],
     size: 'medium',
     habitats: ['trees', 'garden'],
   },
@@ -146,7 +146,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Stactolaema leucotis',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/White-eared-barbet.webp',
-    primaryColors: ['brown', 'white', 'red'],
+    primaryColors: ['brown', 'white', 'black'],
     size: 'medium',
     habitats: ['trees', 'garden'],
   },
@@ -186,7 +186,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Amblyospiza albifrons',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/thick-billed_weaver.webp',
-    primaryColors: ['black', 'yellow', 'brown'],
+    primaryColors: ['black', 'white', 'brown'],
     size: 'medium',
     habitats: ['wetland', 'grassland'],
   },
