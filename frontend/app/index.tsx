@@ -225,7 +225,11 @@ export default function Index() {
         data={filteredBirds}
         keyExtractor={(item) => item.speciesNumber.toString()}
         renderItem={renderBirdCard}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+        style={styles.list}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: insets.bottom + 16 },
+        ]}
       />
 
       <BirdDetailModal
@@ -266,5 +270,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 6,
     backgroundColor: '#1f1f1f',
+  },
+  list: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+  },
+  listContent: {
+    flexGrow: 1,
+    backgroundColor: '#1a1a1a',
   },
 });
