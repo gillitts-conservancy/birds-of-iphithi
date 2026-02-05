@@ -189,11 +189,17 @@ export const useChecklist = () => {
       if (!userId) return;
 
       setSyncStatus('syncing');
-      const { error } = await supabase.from('sightings').insert({
-        user_id: userId,
-        species_number: speciesNumber,
-        seen_at: ts,
-      });
+       const { data, error, status } = await supabase
+    .from('sightings')
+    .insert({
+      user_id: userId,
+      species_number: speciesNumber,
+      seen_at: ts,
+      client_event_id,
+    });
+
+console.log('SIGHTINGS INSERT RESULT', { status, error, data });
+
 
       if (error) {
         console.error('Failed to insert sighting:', error);
