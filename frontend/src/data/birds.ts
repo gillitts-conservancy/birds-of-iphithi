@@ -28,7 +28,7 @@ export interface Bird {
 }
 
 // Test birds data - arranged by Roberts species number
-// NOTE: primaryColors + size are placeholders for now (not provided in the bird list doc)
+// NOTE: size is still placeholder until you provide sizes
 export const birdsData: Bird[] = [
   {
     speciesNumber: 94,
@@ -36,7 +36,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Bostrychia hagedash',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/hadeda_ibis.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['grey', 'brown', 'white'],
     size: 'medium',
     habitats: ['garden', 'grassland', 'wetland'],
   },
@@ -46,7 +46,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Plectropterus gambensis',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/spurwing_goose.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['black', 'white', 'brown'],
     size: 'medium',
     habitats: ['wetland', 'grassland'],
   },
@@ -56,7 +56,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Milvus aegyptius',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/Yellow-billed-kite.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['brown', 'black', 'yellow'],
     size: 'medium',
     habitats: ['open-sky', 'grassland', 'trees'],
   },
@@ -66,7 +66,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Gallinula chloropus',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/common_moorhen.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['black', 'white', 'red'],
     size: 'medium',
     habitats: ['wetland'],
   },
@@ -76,7 +76,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Tauraco porphyreolophus',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/purple-crested_turaco.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['green', 'blue', 'red'],
     size: 'medium',
     habitats: ['trees', 'garden'],
   },
@@ -86,7 +86,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Cuculus solitarius',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/red-chested_cuckoo.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['grey', 'brown', 'red'],
     size: 'medium',
     habitats: ['trees', 'garden'],
   },
@@ -96,7 +96,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Chrysococcyx cupreus',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/emerald_cuckoo.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['green', 'yellow'],
     size: 'medium',
     habitats: ['trees'],
   },
@@ -106,7 +106,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Colius striatus',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/speckled_mousebird.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['brown', 'grey', 'white'],
     size: 'medium',
     habitats: ['garden', 'trees'],
   },
@@ -116,7 +116,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Halcyon albiventris',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/brown-hooded_kingfisher.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['brown', 'white', 'blue'],
     size: 'medium',
     habitats: ['trees', 'garden', 'wetland'],
   },
@@ -126,7 +126,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Bycanistes bucinator',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/trumpeter-hornbill.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['black', 'white', 'yellow'],
     size: 'medium',
     habitats: ['trees'],
   },
@@ -136,7 +136,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Lybius torquatus',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/black-collared_barbet.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['black', 'red', 'yellow'],
     size: 'medium',
     habitats: ['trees', 'garden'],
   },
@@ -146,7 +146,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Stactolaema leucotis',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/White-eared-barbet.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['brown', 'white', 'red'],
     size: 'medium',
     habitats: ['trees', 'garden'],
   },
@@ -156,7 +156,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Dendropicos fuscescens',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/cardinal_woodpecker.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['black', 'white', 'red'],
     size: 'medium',
     habitats: ['trees', 'garden'],
   },
@@ -166,7 +166,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Oriolus larvatus',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/black-headed_oriole.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['yellow', 'black', 'red'],
     size: 'medium',
     habitats: ['trees', 'garden'],
   },
@@ -176,7 +176,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Turdus olivaceus',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/olive_thrush.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['brown', 'grey', 'white'],
     size: 'medium',
     habitats: ['garden', 'trees'],
   },
@@ -186,7 +186,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Amblyospiza albifrons',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/thick-billed_weaver.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['black', 'yellow', 'brown'],
     size: 'medium',
     habitats: ['wetland', 'grassland'],
   },
@@ -196,7 +196,7 @@ export const birdsData: Bird[] = [
     scientificName: 'Ploceus ocularis',
     photoUrl:
       'https://ctfamboviakrzkwgnjtd.supabase.co/storage/v1/object/public/bird-images/spectacled_weaver.webp',
-    primaryColors: ['brown'],
+    primaryColors: ['yellow', 'black', 'green'],
     size: 'medium',
     habitats: ['trees', 'garden'],
   },
