@@ -34,6 +34,11 @@ export default function Index() {
     resetAll,
     seenCount,
     syncStatus,
+
+    // Option B
+    logSighting,
+    getSightingsCount,
+    getLastSeen,
   } = useChecklist();
 
   const handleLogout = () => {
@@ -145,8 +150,11 @@ export default function Index() {
       bird={item}
       isSeen={isSeen(item.speciesNumber)}
       dateSeen={getDateSeen(item.speciesNumber)}
+      sightingsCount={getSightingsCount(item.speciesNumber)}
+      lastSeen={getLastSeen(item.speciesNumber)}
       onToggleSeen={() => toggleSeen(item.speciesNumber)}
       onPress={() => setSelectedBird(item)}
+      onSeenAgain={(speciesNumber) => logSighting(speciesNumber)}
     />
   );
 
@@ -198,9 +206,7 @@ export default function Index() {
       </TouchableOpacity>
 
       {hasActiveAttributeFilters && (
-        <Text style={styles.filterHint}>
-          Matching all selected colours · any selected habitat
-        </Text>
+        <Text style={styles.filterHint}>Matching all selected colours · any selected habitat</Text>
       )}
 
       {showFilters && (
@@ -220,13 +226,8 @@ export default function Index() {
         keyExtractor={(item) => item.speciesNumber.toString()}
         renderItem={renderBirdCard}
         style={styles.list}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingBottom: insets.bottom + 16 },
-        ]}
-        ListEmptyComponent={
-          <View style={styles.emptyFill} />
-        }
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 16 }]}
+        ListEmptyComponent={<View style={styles.emptyFill} />}
       />
 
       <BirdDetailModal
@@ -270,16 +271,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: '#1f1f1f',
   },
-  list: {
-    flex: 1,
-    backgroundColor: BG,
-  },
-  listContent: {
-    flexGrow: 1,
-    backgroundColor: BG,
-  },
-  emptyFill: {
-    flex: 1,
-    backgroundColor: BG,
-  },
+  list: { flex: 1, backgroundColor: BG },
+  listContent: { flexGrow: 1, backgroundColor: BG },
+  emptyFill: { flex: 1, backgroundColor: BG },
 });
