@@ -16,6 +16,7 @@ const COLORS: { value: BirdColor; hex: string }[] = [
   { value: 'grey', hex: '#808080' },
   { value: 'green', hex: '#228B22' },
   { value: 'yellow', hex: '#FFD700' },
+  { value: 'orange', hex: '#C46A1A' },
   { value: 'red', hex: '#DC143C' },
   { value: 'blue', hex: '#1E90FF' },
 ];
