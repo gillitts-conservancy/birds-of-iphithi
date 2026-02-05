@@ -9,6 +9,7 @@ export type BirdColor =
   | 'grey'
   | 'green'
   | 'yellow'
+  | 'orange'
   | 'red'
   | 'blue';
 
