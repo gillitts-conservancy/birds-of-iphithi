@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,10 +12,12 @@ import {
   Platform,
   Keyboard,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bird } from '../data/birds';
+import { supabase } from '../supabase';
 
 // Helper function to format date for display
 const formatDate = (isoDate: string): string => {
@@ -37,6 +39,24 @@ const formatDateForInput = (isoDate: string): string => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+
+// Helper for compact event timestamp display
+const formatSeenAt = (isoDate: string): string => {
+  if (!isoDate) return '';
+  const d = new Date(isoDate);
+  // Example: "05 Feb 2026, 08:12"
+  return d.toLocaleString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+type SightingRow = {
+  seen_at: string;
 };
 
 interface BirdDetailModalProps {
@@ -63,9 +83,16 @@ export const BirdDetailModal: React.FC<BirdDetailModalProps> = ({
   onUpdateDate,
 }) => {
   const insets = useSafeAreaInsets();
+
   const [localNotes, setLocalNotes] = useState(notes);
   const [localDate, setLocalDate] = useState(formatDateForInput(dateSeen));
   const [isEditingDate, setIsEditingDate] = useState(false);
+
+  // Option B: sightings list
+  const [sightings, setSightings] = useState<SightingRow[]>([]);
+  const [isLoadingSightings, setIsLoadingSightings] = useState(false);
+  const [sightingsError, setSightingsError] = useState<string>('');
+  const [showAllSightings, setShowAllSightings] = useState(false);
 
   useEffect(() => {
     setLocalNotes(notes);
@@ -98,6 +125,69 @@ export const BirdDetailModal: React.FC<BirdDetailModalProps> = ({
     }
   };
 
+  const fetchSightings = useCallback(async () => {
+    if (!bird) return;
+
+    setSightingsError('');
+    setIsLoadingSightings(true);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+
+      // If logged out, we don’t have server sightings to show.
+      if (!userId) {
+        setSightings([]);
+        setIsLoadingSightings(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('sightings')
+        .select('seen_at')
+        .eq('user_id', userId)
+        .eq('species_number', bird.speciesNumber)
+        .order('seen_at', { ascending: false });
+
+      if (error) {
+        setSightings([]);
+        setSightingsError('Could not load sightings.');
+        setIsLoadingSightings(false);
+        return;
+      }
+
+      setSightings((data ?? []) as SightingRow[]);
+      setIsLoadingSightings(false);
+    } catch (e) {
+      setSightings([]);
+      setSightingsError('Could not load sightings.');
+      setIsLoadingSightings(false);
+    }
+  }, [bird]);
+
+  // Fetch sightings when modal opens or bird changes
+  useEffect(() => {
+    if (!visible) return;
+    if (!bird) return;
+    fetchSightings();
+  }, [visible, bird, fetchSightings]);
+
+  // If the user toggles "Seen" in the modal (which logs a sighting on ON),
+  // re-fetch sightings after the toggle completes.
+  const handleToggleSeenAndRefresh = async () => {
+    await Promise.resolve(onToggleSeen());
+    // refresh server list (if logged in)
+    await fetchSightings();
+  };
+
+  const sightingsCount = sightings.length;
+
+  const maxCollapsed = 6;
+  const sightingsToDisplay = useMemo(() => {
+    if (showAllSightings) return sightings;
+    return sightings.slice(0, maxCollapsed);
+  }, [sightings, showAllSightings]);
+
   if (!bird) return null;
 
   return (
@@ -129,38 +219,82 @@ export const BirdDetailModal: React.FC<BirdDetailModalProps> = ({
             contentContainerStyle={styles.contentContainer}
             showsVerticalScrollIndicator={false}
           >
-            <Image
-              source={{ uri: bird.photoUrl }}
-              style={styles.image}
-              resizeMode="cover"
-            />
+            <Image source={{ uri: bird.photoUrl }} style={styles.image} resizeMode="cover" />
 
             <View style={styles.detailsContainer}>
-              <Text style={styles.speciesNumber}>
-                Species #{bird.speciesNumber}
-              </Text>
+              <Text style={styles.speciesNumber}>Species #{bird.speciesNumber}</Text>
               <Text style={styles.commonName}>{bird.commonName}</Text>
               <Text style={styles.scientificName}>{bird.scientificName}</Text>
 
               <TouchableOpacity
                 style={styles.seenToggle}
-                onPress={onToggleSeen}
+                onPress={handleToggleSeenAndRefresh}
                 activeOpacity={0.7}
               >
-                <View
-                  style={[
-                    styles.checkbox,
-                    isSeen && styles.checkboxChecked,
-                  ]}
-                >
-                  {isSeen && (
-                    <Ionicons name="checkmark" size={20} color="#fff" />
-                  )}
+                <View style={[styles.checkbox, isSeen && styles.checkboxChecked]}>
+                  {isSeen && <Ionicons name="checkmark" size={20} color="#fff" />}
                 </View>
-                <Text style={styles.seenText}>
-                  {isSeen ? 'Seen' : 'Not seen yet'}
-                </Text>
+                <Text style={styles.seenText}>{isSeen ? 'Seen' : 'Not seen yet'}</Text>
               </TouchableOpacity>
+
+              {/* Option B: Sightings event log */}
+              <View style={styles.sightingsSection}>
+                <View style={styles.sightingsHeaderRow}>
+                  <View style={styles.sightingsTitleRow}>
+                    <Ionicons name="time-outline" size={18} color="#018440" />
+                    <Text style={styles.sightingsLabel}>Sightings</Text>
+                  </View>
+
+                  <Text style={styles.sightingsCount}>
+                    {isLoadingSightings ? '' : `${sightingsCount}`}
+                  </Text>
+                </View>
+
+                {isLoadingSightings && (
+                  <View style={styles.sightingsLoadingRow}>
+                    <ActivityIndicator size="small" color="#018440" />
+                    <Text style={styles.sightingsLoadingText}>Loading sightings…</Text>
+                  </View>
+                )}
+
+                {!isLoadingSightings && !!sightingsError && (
+                  <Text style={styles.sightingsErrorText}>{sightingsError}</Text>
+                )}
+
+                {!isLoadingSightings && !sightingsError && sightingsCount === 0 && (
+                  <Text style={styles.sightingsEmptyText}>
+                    No sightings logged yet.
+                  </Text>
+                )}
+
+                {!isLoadingSightings && !sightingsError && sightingsCount > 0 && (
+                  <View style={styles.sightingsList}>
+                    {sightingsToDisplay.map((s, idx) => (
+                      <View key={`${s.seen_at}-${idx}`} style={styles.sightingRow}>
+                        <Ionicons name="ellipse" size={8} color="#018440" />
+                        <Text style={styles.sightingText}>{formatSeenAt(s.seen_at)}</Text>
+                      </View>
+                    ))}
+
+                    {sightingsCount > maxCollapsed && (
+                      <TouchableOpacity
+                        style={styles.showMoreButton}
+                        onPress={() => setShowAllSightings((v) => !v)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.showMoreText}>
+                          {showAllSightings ? 'Show less' : `Show all (${sightingsCount})`}
+                        </Text>
+                        <Ionicons
+                          name={showAllSightings ? 'chevron-up' : 'chevron-down'}
+                          size={16}
+                          color="#018440"
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+              </View>
 
               {isSeen && (
                 <View style={styles.dateSection}>
@@ -277,7 +411,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 16,
     borderRadius: 12,
-    marginBottom: 20,
+    marginBottom: 14,
   },
   checkbox: {
     width: 32,
@@ -298,6 +432,86 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
   },
+
+  // Sightings section (Option B)
+  sightingsSection: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  sightingsHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  sightingsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sightingsLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#018440',
+    marginLeft: 8,
+  },
+  sightingsCount: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#333',
+  },
+  sightingsLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  sightingsLoadingText: {
+    marginLeft: 10,
+    color: '#666',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sightingsErrorText: {
+    color: '#b00020',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sightingsEmptyText: {
+    color: '#666',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sightingsList: {
+    gap: 8,
+  },
+  sightingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sightingText: {
+    marginLeft: 10,
+    fontSize: 13,
+    color: '#333',
+    fontWeight: '600',
+  },
+  showMoreButton: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#F3FAF5',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  showMoreText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#018440',
+    marginRight: 6,
+  },
+
   dateSection: {
     backgroundColor: '#fff',
     borderRadius: 12,
