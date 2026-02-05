@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../supabase';
 
@@ -6,8 +6,15 @@ const SEEN_STORAGE_KEY = '@birds_of_iphithi_seen';
 const NOTES_STORAGE_KEY = '@birds_of_iphithi_notes';
 const DATES_STORAGE_KEY = '@birds_of_iphithi_dates';
 
-// Final-state “dirty snapshot” queue (per bird_id)
-const DIRTY_STORAGE_KEY = '@birds_of_iphithi_dirty_v1';
+/**
+ * Option B (Event Log) local caches:
+ * - sightingsCount: count per species
+ * - lastSeen: last event timestamp per species
+ *
+ * These are derived from Supabase when logged in, but kept locally for offline continuity.
+ */
+const SIGHTINGS_COUNT_STORAGE_KEY = '@birds_of_iphithi_sightings_count_v1';
+const LAST_SEEN_STORAGE_KEY = '@birds_of_iphithi_last_seen_v1';
 
 interface SeenState {
   [speciesNumber: number]: boolean;
@@ -18,39 +25,16 @@ interface NotesState {
 }
 
 interface DatesState {
-  [speciesNumber: number]: string; // ISO date string
+  [speciesNumber: number]: string; // ISO date string (first-seen / user-edited)
 }
 
-/**
- * Dirty entry represents the *final* state we want the server to reflect.
- * - seen: whether the bird is checked
- * - date: the local date (ISO) we want stored for first-seen (subject to earliest-wins rule)
- * - dateEdited: user explicitly edited the date (override earliest-wins)
- * - notes: notes to store (only synced when seen === true)
- */
-type DirtyMap = Record<
-  string,
-  {
-    seen: boolean;
-    date?: string;
-    dateEdited?: boolean;
-    notes?: string | null;
-    updatedAt: string; // ISO timestamp for debugging / future use
-  }
->;
+interface SightingsCountState {
+  [speciesNumber: number]: number;
+}
 
-// Works in web + RN without relying on crypto.randomUUID
-const uuid = (): string => {
-  const c: any = (globalThis as any).crypto;
-  if (c?.randomUUID) return c.randomUUID();
-
-  // Fallback UUID v4-ish
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
-    const r = Math.floor(Math.random() * 16);
-    const v = ch === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-};
+interface LastSeenState {
+  [speciesNumber: number]: string; // ISO timestamp
+}
 
 const nowIso = () => new Date().toISOString();
 
@@ -67,66 +51,58 @@ export const useChecklist = () => {
   const [seenBirds, setSeenBirds] = useState<SeenState>({});
   const [notes, setNotes] = useState<NotesState>({});
   const [dates, setDates] = useState<DatesState>({});
+
+  // Option B (Event Log)
+  const [sightingsCount, setSightingsCount] = useState<SightingsCountState>({});
+  const [lastSeen, setLastSeen] = useState<LastSeenState>({});
+
   const [isLoading, setIsLoading] = useState(true);
 
-  // Optional: simple sync status you can surface later if you want
+  // Keep this because Index already surfaces it
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
 
-  // Keep dirty queue in memory to reduce AsyncStorage reads
-  const dirtyRef = useRef<DirtyMap>({});
-  const syncingRef = useRef(false);
+  const saveCache = useCallback(
+    async (
+      nextSeen: SeenState,
+      nextNotes: NotesState,
+      nextDates: DatesState,
+      nextCounts: SightingsCountState,
+      nextLastSeen: LastSeenState
+    ) => {
+      await Promise.all([
+        AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(nextSeen)),
+        AsyncStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(nextNotes)),
+        AsyncStorage.setItem(DATES_STORAGE_KEY, JSON.stringify(nextDates)),
+        AsyncStorage.setItem(SIGHTINGS_COUNT_STORAGE_KEY, JSON.stringify(nextCounts)),
+        AsyncStorage.setItem(LAST_SEEN_STORAGE_KEY, JSON.stringify(nextLastSeen)),
+      ]);
+    },
+    []
+  );
 
-  const saveCache = useCallback(async (nextSeen: SeenState, nextNotes: NotesState, nextDates: DatesState) => {
-    await Promise.all([
-      AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(nextSeen)),
-      AsyncStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(nextNotes)),
-      AsyncStorage.setItem(DATES_STORAGE_KEY, JSON.stringify(nextDates)),
+  const loadFromCache = useCallback(async () => {
+    const [seenData, notesData, datesData, countData, lastSeenData] = await Promise.all([
+      AsyncStorage.getItem(SEEN_STORAGE_KEY),
+      AsyncStorage.getItem(NOTES_STORAGE_KEY),
+      AsyncStorage.getItem(DATES_STORAGE_KEY),
+      AsyncStorage.getItem(SIGHTINGS_COUNT_STORAGE_KEY),
+      AsyncStorage.getItem(LAST_SEEN_STORAGE_KEY),
     ]);
-  }, []);
 
-  const saveDirty = useCallback(async (dirty: DirtyMap) => {
-    dirtyRef.current = dirty;
-    await AsyncStorage.setItem(DIRTY_STORAGE_KEY, JSON.stringify(dirty));
-  }, []);
+    const nextSeen = safeParseJson<SeenState>(seenData, {});
+    const nextNotes = safeParseJson<NotesState>(notesData, {});
+    const nextDates = safeParseJson<DatesState>(datesData, {});
+    const nextCounts = safeParseJson<SightingsCountState>(countData, {});
+    const nextLastSeen = safeParseJson<LastSeenState>(lastSeenData, {});
 
-  const loadDirty = useCallback(async () => {
-    const raw = await AsyncStorage.getItem(DIRTY_STORAGE_KEY);
-    const parsed = safeParseJson<DirtyMap>(raw, {});
-    dirtyRef.current = parsed;
-    return parsed;
-  }, []);
+    setSeenBirds(nextSeen);
+    setNotes(nextNotes);
+    setDates(nextDates);
+    setSightingsCount(nextCounts);
+    setLastSeen(nextLastSeen);
 
-  const enqueueDirty = useCallback(
-    async (birdId: string, patch: Omit<DirtyMap[string], 'updatedAt'> & { updatedAt?: string }) => {
-      const current = dirtyRef.current ?? {};
-      const prev = current[birdId];
-
-      // Coalesce to final state for this bird (last write wins)
-      const nextEntry = {
-        seen: patch.seen,
-        date: patch.date ?? prev?.date,
-        dateEdited: patch.dateEdited ?? prev?.dateEdited,
-        notes: patch.notes ?? prev?.notes,
-        updatedAt: patch.updatedAt ?? nowIso(),
-      };
-
-      const nextDirty: DirtyMap = { ...current, [birdId]: nextEntry };
-      await saveDirty(nextDirty);
-    },
-    [saveDirty]
-  );
-
-  const removeDirty = useCallback(
-    async (birdId: string) => {
-      const current = dirtyRef.current ?? {};
-      if (!current[birdId]) return;
-
-      const nextDirty: DirtyMap = { ...current };
-      delete nextDirty[birdId];
-      await saveDirty(nextDirty);
-    },
-    [saveDirty]
-  );
+    return { nextSeen, nextNotes, nextDates, nextCounts, nextLastSeen };
+  }, [saveCache]);
 
   const getUserId = useCallback(async (): Promise<string | null> => {
     try {
@@ -138,184 +114,238 @@ export const useChecklist = () => {
   }, []);
 
   /**
-   * First-seen rule:
-   * - If the user did NOT explicitly edit the date, keep the earliest date between server + local.
-   * - If they DID explicitly edit the date, trust the local date (correction).
+   * Option B: hydrate derived sightings stats from Supabase event log.
+   * - sightingsCount[species] = number of events
+   * - lastSeen[species] = max(seen_at)
+   * - checkbox seenBirds[species] = count > 0
+   *
+   * Notes + manual "date first seen" remain local-only for now.
    */
-  const chooseFirstSeenDate = useCallback(
-    async (userId: string, birdId: string, localDateIso: string, dateEdited?: boolean) => {
-      if (dateEdited) return localDateIso;
+  const loadFromSupabase = useCallback(
+    async (userId: string) => {
+      setSyncStatus('syncing');
 
-      // Fetch existing (if any) and keep earliest
       const { data, error } = await supabase
         .from('sightings')
-        .select('sighted_at')
-        .eq('user_id', userId)
-        .eq('bird_id', birdId)
-        .maybeSingle();
+        .select('species_number, seen_at')
+        .eq('user_id', userId);
 
       if (error) {
-        // If this fails (offline, network, etc), fall back to local date;
-        // dirty entry will remain and we’ll retry later.
-        return localDateIso;
+        setSyncStatus('error');
+        throw error;
       }
 
-      const serverDate = data?.sighted_at as string | undefined;
-      if (!serverDate) return localDateIso;
+      const nextCounts: SightingsCountState = {};
+      const nextLastSeen: LastSeenState = {};
+      const nextSeen: SeenState = { ...seenBirds }; // keep local if you want, then overlay derived truth
 
-      // ISO string compare works for chronological ordering when both are valid ISO timestamps
-      return serverDate < localDateIso ? serverDate : localDateIso;
+      (data ?? []).forEach((row: any) => {
+        const sn = Number(row.species_number);
+        if (!Number.isFinite(sn)) return;
+
+        nextCounts[sn] = (nextCounts[sn] ?? 0) + 1;
+
+        const seenAt = row.seen_at as string | undefined;
+        if (seenAt) {
+          const prev = nextLastSeen[sn];
+          if (!prev || seenAt > prev) nextLastSeen[sn] = seenAt;
+        }
+      });
+
+      // Derive "seen" from event log when logged in
+      Object.keys(nextCounts).forEach((k) => {
+        const sn = Number(k);
+        if (!Number.isFinite(sn)) return;
+        nextSeen[sn] = true;
+      });
+
+      // If a species has no events, we do NOT force nextSeen[sn]=false here
+      // because you still want the checkbox as an optional marker (and you may
+      // later decide to fully derive it). This keeps disruption minimal.
+
+      setSightingsCount(nextCounts);
+      setLastSeen(nextLastSeen);
+      setSeenBirds(nextSeen);
+
+      await saveCache(nextSeen, notes, dates, nextCounts, nextLastSeen);
+
+      setSyncStatus('idle');
     },
-    []
+    [dates, notes, saveCache, seenBirds]
   );
 
   /**
-   * Flush dirty queue to Supabase.
-   * - Final state only per bird.
-   * - Stops on first “hard” error to avoid hammering.
+   * Option B: Insert a new sighting event (append-only).
+   * Called by "+ Seen again" (and also by turning checkbox ON, once).
    */
-  const flushDirtyToSupabase = useCallback(async () => {
-    if (syncingRef.current) return;
+  const logSighting = useCallback(
+    async (speciesNumber: number) => {
+      const userId = await getUserId();
+      const timestamp = nowIso();
 
-    const userId = await getUserId();
-    if (!userId) return;
+      // Update local derived stats immediately (works offline too)
+      const nextCounts: SightingsCountState = {
+        ...sightingsCount,
+        [speciesNumber]: (sightingsCount[speciesNumber] ?? 0) + 1,
+      };
 
-    syncingRef.current = true;
-    setSyncStatus('syncing');
+      const prevLast = lastSeen[speciesNumber];
+      const nextLastSeen: LastSeenState = {
+        ...lastSeen,
+        [speciesNumber]: !prevLast || timestamp > prevLast ? timestamp : prevLast,
+      };
 
-    try {
-      const dirty = dirtyRef.current ?? {};
-      const birdIds = Object.keys(dirty);
+      // Ensure checkbox reflects at least one sighting
+      const nextSeen: SeenState = { ...seenBirds, [speciesNumber]: true };
 
-      for (const birdId of birdIds) {
-        const entry = dirty[birdId];
-        if (!entry) continue;
+      // If no "first seen" date exists locally, set it now (optional marker)
+      const nextDates: DatesState = { ...dates };
+      if (!nextDates[speciesNumber]) nextDates[speciesNumber] = timestamp;
 
-        if (entry.seen) {
-          const localDate = entry.date ?? nowIso();
-          const finalDate = await chooseFirstSeenDate(userId, birdId, localDate, entry.dateEdited);
+      setSightingsCount(nextCounts);
+      setLastSeen(nextLastSeen);
+      setSeenBirds(nextSeen);
+      setDates(nextDates);
 
-          // Determine if a row exists
-          const { data: existing, error: existingError } = await supabase
-            .from('sightings')
-            .select('bird_id')
-            .eq('user_id', userId)
-            .eq('bird_id', birdId)
-            .maybeSingle();
+      await saveCache(nextSeen, notes, nextDates, nextCounts, nextLastSeen);
 
-          if (existingError) {
-            // Likely offline / network / auth edge. Stop flush; keep dirty for later.
-            throw existingError;
-          }
+      // If logged in, write event to Supabase
+      if (!userId) {
+        // Offline / not logged in: event remains local only (offline queue can be added later)
+        return;
+      }
 
-          if (existing) {
-            const { error: updateError } = await supabase
-              .from('sightings')
-              .update({
-                sighted_at: finalDate,
-                notes: entry.notes ?? null,
-                client_event_id: uuid(),
-              })
-              .eq('user_id', userId)
-              .eq('bird_id', birdId);
+      setSyncStatus('syncing');
 
-            if (updateError) throw updateError;
-          } else {
-            const { error: insertError } = await supabase.from('sightings').insert({
-              user_id: userId,
-              bird_id: birdId,
-              sighted_at: finalDate,
-              notes: entry.notes ?? null,
-              client_event_id: uuid(),
-            });
+      const { error } = await supabase.from('sightings').insert({
+        user_id: userId,
+        species_number: speciesNumber,
+        seen_at: timestamp,
+        // notes: null, // keep column available; we’re not attaching notes per event yet
+      });
 
-            if (insertError) throw insertError;
-          }
-
-          await removeDirty(birdId);
-        } else {
-          // Final state is unchecked: delete on server
-          const { error: deleteError } = await supabase
-            .from('sightings')
-            .delete()
-            .eq('user_id', userId)
-            .eq('bird_id', birdId);
-
-          if (deleteError) throw deleteError;
-
-          await removeDirty(birdId);
-        }
+      if (error) {
+        console.error('Failed to log sighting:', error);
+        setSyncStatus('error');
+        return;
       }
 
       setSyncStatus('idle');
-    } catch (e) {
-      console.error('Failed to flush dirty queue:', e);
-      setSyncStatus('error');
-    } finally {
-      syncingRef.current = false;
-    }
-  }, [chooseFirstSeenDate, getUserId, removeDirty]);
-
-  const loadFromCache = useCallback(async () => {
-    const [seenData, notesData, datesData] = await Promise.all([
-      AsyncStorage.getItem(SEEN_STORAGE_KEY),
-      AsyncStorage.getItem(NOTES_STORAGE_KEY),
-      AsyncStorage.getItem(DATES_STORAGE_KEY),
-    ]);
-
-    const nextSeen = safeParseJson<SeenState>(seenData, {});
-    const nextNotes = safeParseJson<NotesState>(notesData, {});
-    const nextDates = safeParseJson<DatesState>(datesData, {});
-
-    setSeenBirds(nextSeen);
-    setNotes(nextNotes);
-    setDates(nextDates);
-
-    return { nextSeen, nextNotes, nextDates };
-  }, []);
-
-  const loadFromSupabase = useCallback(
-    async (userId: string) => {
-      const { data, error } = await supabase
-        .from('sightings')
-        .select('bird_id, sighted_at, notes')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
-      const nextSeen: SeenState = {};
-      const nextNotes: NotesState = {};
-      const nextDates: DatesState = {};
-
-      (data ?? []).forEach((row: any) => {
-        const speciesNumber = Number(row.bird_id);
-        if (!Number.isFinite(speciesNumber)) return;
-
-        nextSeen[speciesNumber] = true;
-        if (row.sighted_at) nextDates[speciesNumber] = row.sighted_at;
-        if (row.notes) nextNotes[speciesNumber] = row.notes;
-      });
-
-      setSeenBirds(nextSeen);
-      setNotes(nextNotes);
-      setDates(nextDates);
-
-      await saveCache(nextSeen, nextNotes, nextDates);
     },
-    [saveCache]
+    [dates, getUserId, lastSeen, notes, saveCache, seenBirds, sightingsCount]
   );
+
+  /**
+   * Checkbox behavior (minimal disruption):
+   * - Turning ON: log a sighting event once (creates first event)
+   * - Turning OFF: purely local checkbox off (does NOT delete server events)
+   *
+   * This avoids any "toggle ambiguity" on the server: the server is an event log only.
+   */
+  const toggleSeen = useCallback(
+    async (speciesNumber: number) => {
+      const wasSeen = !!seenBirds[speciesNumber];
+
+      if (!wasSeen) {
+        // Turning ON means: record at least one event.
+        await logSighting(speciesNumber);
+        return;
+      }
+
+      // Turning OFF is local-only (does not delete event log)
+      const nextSeen: SeenState = { ...seenBirds, [speciesNumber]: false };
+      setSeenBirds(nextSeen);
+
+      await saveCache(nextSeen, notes, dates, sightingsCount, lastSeen);
+    },
+    [dates, lastSeen, logSighting, notes, saveCache, seenBirds, sightingsCount]
+  );
+
+  /**
+   * Notes remain local-only for now.
+   * (Your table still has notes, but attaching notes to an event log needs a defined model:
+   * per-event notes vs per-species notes. We won’t guess.)
+   */
+  const updateNotes = useCallback(
+    async (speciesNumber: number, note: string) => {
+      const nextNotes: NotesState = { ...notes, [speciesNumber]: note };
+      setNotes(nextNotes);
+      await saveCache(seenBirds, nextNotes, dates, sightingsCount, lastSeen);
+    },
+    [dates, lastSeen, notes, saveCache, seenBirds, sightingsCount]
+  );
+
+  /**
+   * Date edit remains local-only (first-seen marker / correction).
+   */
+  const updateDate = useCallback(
+    async (speciesNumber: number, date: string) => {
+      const nextDates: DatesState = { ...dates, [speciesNumber]: date };
+      setDates(nextDates);
+      await saveCache(seenBirds, notes, nextDates, sightingsCount, lastSeen);
+    },
+    [dates, lastSeen, notes, saveCache, seenBirds, sightingsCount]
+  );
+
+  /**
+   * Reset:
+   * - clears local caches
+   * - if logged in, deletes ALL your event log rows (per-user RLS allows this)
+   */
+  const resetAll = useCallback(async () => {
+    setSeenBirds({});
+    setNotes({});
+    setDates({});
+    setSightingsCount({});
+    setLastSeen({});
+    setSyncStatus('idle');
+
+    try {
+      await saveCache({}, {}, {}, {}, {});
+
+      const userId = await getUserId();
+      if (!userId) return;
+
+      setSyncStatus('syncing');
+      const { error } = await supabase.from('sightings').delete().eq('user_id', userId);
+      if (error) {
+        console.error('Failed to reset sightings in Supabase:', error);
+        setSyncStatus('error');
+        return;
+      }
+
+      setSyncStatus('idle');
+    } catch (error) {
+      console.error('Failed to reset data:', error);
+      setSyncStatus('error');
+    }
+  }, [getUserId, saveCache]);
+
+  const isSeen = useCallback((speciesNumber: number) => !!seenBirds[speciesNumber], [seenBirds]);
+  const getNotes = useCallback((speciesNumber: number) => notes[speciesNumber] || '', [notes]);
+  const getDateSeen = useCallback((speciesNumber: number) => dates[speciesNumber] || '', [dates]);
+
+  // Option B selectors
+  const getSightingsCount = useCallback(
+    (speciesNumber: number) => sightingsCount[speciesNumber] ?? 0,
+    [sightingsCount]
+  );
+
+  const getLastSeen = useCallback(
+    (speciesNumber: number) => lastSeen[speciesNumber] || '',
+    [lastSeen]
+  );
+
+  const seenCount = Object.values(seenBirds).filter(Boolean).length;
 
   useEffect(() => {
     const init = async () => {
       try {
         await loadFromCache();
-        await loadDirty();
 
         const userId = await getUserId();
         if (userId) {
-          // Hydrate from server, then apply any pending local changes on top via flush.
           await loadFromSupabase(userId);
-          await flushDirtyToSupabase();
         }
       } catch (error) {
         console.error('Failed to initialize checklist:', error);
@@ -328,150 +358,13 @@ export const useChecklist = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /**
-   * Toggle seen:
-   * - Turning ON: set date if missing (now), but this will be reconciled to earliest-on-server on sync unless user edits.
-   * - Turning OFF: remove date locally (and leave notes locally — not synced while unchecked in current model).
-   */
-  const toggleSeen = useCallback(
-    async (speciesNumber: number) => {
-      const birdId = String(speciesNumber);
-
-      // Compute next state from current state snapshots (avoid nested setState side effects)
-      const wasSeen = !!seenBirds[speciesNumber];
-      const nextSeen: SeenState = { ...seenBirds, [speciesNumber]: !wasSeen };
-
-      let nextDates: DatesState = { ...dates };
-      if (!wasSeen) {
-        // Only set if missing
-        if (!nextDates[speciesNumber]) {
-          nextDates[speciesNumber] = nowIso();
-        }
-      } else {
-        delete nextDates[speciesNumber];
-      }
-
-      // Notes remain in local cache even when unchecked.
-      // (If later you add a separate bird_notes table, we can sync these too.)
-      const nextNotes: NotesState = { ...notes };
-
-      setSeenBirds(nextSeen);
-      setDates(nextDates);
-      setNotes(nextNotes);
-
-      await saveCache(nextSeen, nextNotes, nextDates);
-
-      // Enqueue final desired server state
-      if (!wasSeen) {
-        await enqueueDirty(birdId, {
-          seen: true,
-          date: nextDates[speciesNumber],
-          dateEdited: false,
-          notes: nextNotes[speciesNumber] ?? null,
-        });
-      } else {
-        await enqueueDirty(birdId, {
-          seen: false,
-          // date/notes kept for local use, but server will delete row
-        });
-      }
-
-      // Try to flush (no-op if not logged in / offline)
-      await flushDirtyToSupabase();
-    },
-    [dates, enqueueDirty, flushDirtyToSupabase, notes, saveCache, seenBirds]
-  );
-
-  /**
-   * Update notes:
-   * - Always saved locally.
-   * - If the bird is currently seen, we enqueue a server update.
-   * - If unchecked, notes remain local-only with current schema (by design).
-   */
-  const updateNotes = useCallback(
-    async (speciesNumber: number, note: string) => {
-      const birdId = String(speciesNumber);
-      const nextNotes: NotesState = { ...notes, [speciesNumber]: note };
-
-      setNotes(nextNotes);
-      await saveCache(seenBirds, nextNotes, dates);
-
-      if (seenBirds[speciesNumber]) {
-        await enqueueDirty(birdId, {
-          seen: true,
-          date: dates[speciesNumber] ?? nowIso(),
-          notes: note,
-          // dateEdited left as-is
-        });
-        await flushDirtyToSupabase();
-      }
-    },
-    [dates, enqueueDirty, flushDirtyToSupabase, notes, saveCache, seenBirds]
-  );
-
-  /**
-   * Update date:
-   * - This is an explicit correction by the user, so dateEdited=true
-   * - If bird is seen, enqueue update.
-   */
-  const updateDate = useCallback(
-    async (speciesNumber: number, date: string) => {
-      const birdId = String(speciesNumber);
-      const nextDates: DatesState = { ...dates, [speciesNumber]: date };
-
-      setDates(nextDates);
-      await saveCache(seenBirds, notes, nextDates);
-
-      if (seenBirds[speciesNumber]) {
-        await enqueueDirty(birdId, {
-          seen: true,
-          date,
-          dateEdited: true,
-          notes: notes[speciesNumber] ?? null,
-        });
-        await flushDirtyToSupabase();
-      }
-    },
-    [dates, enqueueDirty, flushDirtyToSupabase, notes, saveCache, seenBirds]
-  );
-
-  const resetAll = useCallback(async () => {
-    setSeenBirds({});
-    setNotes({});
-    setDates({});
-    setSyncStatus('idle');
-
-    try {
-      await Promise.all([
-        AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify({})),
-        AsyncStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify({})),
-        AsyncStorage.setItem(DATES_STORAGE_KEY, JSON.stringify({})),
-      ]);
-
-      await saveDirty({});
-
-      const userId = await getUserId();
-      if (!userId) return;
-
-      const { error } = await supabase.from('sightings').delete().eq('user_id', userId);
-      if (error) console.error('Failed to reset sightings in Supabase:', error);
-    } catch (error) {
-      console.error('Failed to reset data:', error);
-    }
-  }, [getUserId, saveDirty]);
-
-  const isSeen = useCallback((speciesNumber: number) => !!seenBirds[speciesNumber], [seenBirds]);
-  const getNotes = useCallback((speciesNumber: number) => notes[speciesNumber] || '', [notes]);
-  const getDateSeen = useCallback((speciesNumber: number) => dates[speciesNumber] || '', [dates]);
-
-  const seenCount = Object.values(seenBirds).filter(Boolean).length;
-
   return {
+    // existing
     seenBirds,
     notes,
     dates,
     isLoading,
-    syncStatus, // optional
+    syncStatus,
     toggleSeen,
     updateNotes,
     updateDate,
@@ -480,7 +373,10 @@ export const useChecklist = () => {
     getNotes,
     getDateSeen,
     seenCount,
-    // Optional manual sync trigger (handy for a “Sync now” button later)
-    flushDirtyToSupabase,
+
+    // Option B: new
+    logSighting,
+    getSightingsCount,
+    getLastSeen,
   };
 };
