@@ -8,7 +8,6 @@ import {
   StatusBar,
   TouchableOpacity,
   Alert,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -88,7 +87,6 @@ export default function Index() {
   const filteredBirds = useMemo(() => {
     let birds = [...birdsData];
 
-    // Search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       birds = birds.filter(
@@ -98,26 +96,22 @@ export default function Index() {
       );
     }
 
-    // COLOUR = AND
     if (selectedColors.length > 0) {
       birds = birds.filter((bird) =>
         selectedColors.every((color) => bird.primaryColors.includes(color))
       );
     }
 
-    // SIZE
     if (selectedSize) {
       birds = birds.filter((bird) => bird.size === selectedSize);
     }
 
-    // HABITAT = OR
     if (selectedHabitats.length > 0) {
       birds = birds.filter((bird) =>
         selectedHabitats.some((habitat) => bird.habitats.includes(habitat))
       );
     }
 
-    // Seen filters
     if (activeFilter === 'seen') {
       birds = birds.filter((bird) => isSeen(bird.speciesNumber));
     } else if (activeFilter === 'unseen') {
@@ -167,7 +161,7 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#4CAF50" />
+      <StatusBar barStyle="light-content" backgroundColor="#018440" />
 
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.title}>Birds of iPhithi</Text>
@@ -230,6 +224,9 @@ export default function Index() {
           styles.listContent,
           { paddingBottom: insets.bottom + 16 },
         ]}
+        ListEmptyComponent={
+          <View style={styles.emptyFill} />
+        }
       />
 
       <BirdDetailModal
@@ -247,9 +244,11 @@ export default function Index() {
   );
 }
 
+const BG = '#1a1a1a';
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a1a' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: BG },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG },
   loadingText: { marginTop: 12, color: '#aaa' },
   header: { backgroundColor: '#018440', paddingHorizontal: 16, paddingBottom: 16 },
   title: { fontSize: 26, fontWeight: '700', color: '#fff' },
@@ -273,10 +272,14 @@ const styles = StyleSheet.create({
   },
   list: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: BG,
   },
   listContent: {
     flexGrow: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: BG,
+  },
+  emptyFill: {
+    flex: 1,
+    backgroundColor: BG,
   },
 });
