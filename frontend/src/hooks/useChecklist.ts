@@ -8,6 +8,9 @@ const DATES_STORAGE_KEY = '@birds_dates_v1';
 const SIGHTINGS_COUNT_KEY = '@birds_sightings_count_v1';
 const LAST_SEEN_KEY = '@birds_last_seen_v1';
 
+// NEW
+const PENDING_SIGHTINGS_KEY = '@birds_pending_sightings_v1';
+
 type SyncStatus = 'idle' | 'syncing' | 'error';
 
 type SeenState = Record<number, boolean>;
@@ -15,6 +18,12 @@ type NotesState = Record<number, string>;
 type DatesState = Record<number, string>;
 type SightingsCountState = Record<number, number>;
 type LastSeenState = Record<number, string>;
+
+type PendingSighting = {
+  client_event_id: string;
+  species_number: number;
+  seen_at: string;
+};
 
 const safeParse = <T,>(raw: string | null, fallback: T): T => {
   if (!raw) return fallback;
@@ -35,6 +44,7 @@ const generateUUID = () =>
 export const useChecklist = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [lastSyncError, setLastSyncError] = useState<string>('');
 
   const [seenBirds, setSeenBirds] = useState<SeenState>({});
   const [notes, setNotes] = useState<NotesState>({});
@@ -66,13 +76,7 @@ export const useChecklist = () => {
   );
 
   const loadCache = useCallback(async () => {
-    const [
-      seenRaw,
-      notesRaw,
-      datesRaw,
-      countsRaw,
-      lastSeenRaw,
-    ] = await Promise.all([
+    const [seenRaw, notesRaw, datesRaw, countsRaw, lastSeenRaw] = await Promise.all([
       AsyncStorage.getItem(SEEN_STORAGE_KEY),
       AsyncStorage.getItem(NOTES_STORAGE_KEY),
       AsyncStorage.getItem(DATES_STORAGE_KEY),
@@ -101,7 +105,74 @@ export const useChecklist = () => {
   }, []);
 
   /* ------------------------------------------------------------------ */
-  /* Option B — log sighting (FULL FIX)                                  */
+  /* Pending queue (NEW)                                                */
+  /* ------------------------------------------------------------------ */
+
+  const getPending = useCallback(async (): Promise<PendingSighting[]> => {
+    const raw = await AsyncStorage.getItem(PENDING_SIGHTINGS_KEY);
+    return safeParse<PendingSighting[]>(raw, []);
+  }, []);
+
+  const setPending = useCallback(async (items: PendingSighting[]) => {
+    await AsyncStorage.setItem(PENDING_SIGHTINGS_KEY, JSON.stringify(items));
+  }, []);
+
+  const enqueuePending = useCallback(
+    async (item: PendingSighting) => {
+      const items = await getPending();
+      items.push(item);
+      await setPending(items);
+    },
+    [getPending, setPending]
+  );
+
+  const retryPendingSightings = useCallback(async () => {
+    const userId = await getUserId();
+    if (!userId) {
+      setSyncStatus('error');
+      setLastSyncError('Not signed in.');
+      return;
+    }
+
+    const pending = await getPending();
+    if (pending.length === 0) {
+      // Nothing to retry
+      setSyncStatus('idle');
+      return;
+    }
+
+    setSyncStatus('syncing');
+    setLastSyncError('');
+
+    try {
+      const { error, status } = await supabase.from('sightings').insert(
+        pending.map((p) => ({
+          user_id: userId,
+          species_number: p.species_number,
+          seen_at: p.seen_at,
+          client_event_id: p.client_event_id,
+        }))
+      );
+
+      console.log('SIGHTINGS RETRY RESULT', { status, error });
+
+      if (error) {
+        setSyncStatus('error');
+        setLastSyncError(error.message ?? 'Unknown error');
+        return;
+      }
+
+      await setPending([]);
+      setSyncStatus('idle');
+    } catch (e) {
+      console.log('SIGHTINGS RETRY EXCEPTION', e);
+      setSyncStatus('error');
+      setLastSyncError(String(e));
+    }
+  }, [getPending, getUserId, setPending]);
+
+  /* ------------------------------------------------------------------ */
+  /* Option B — log sighting                                            */
   /* ------------------------------------------------------------------ */
 
   const logSighting = useCallback(
@@ -109,7 +180,7 @@ export const useChecklist = () => {
       const userId = await getUserId();
       const ts = nowIso();
 
-      /* ---- update local state immediately ---- */
+      // update local state immediately
       const nextCounts: SightingsCountState = {
         ...sightingsCount,
         [speciesNumber]: (sightingsCount[speciesNumber] ?? 0) + 1,
@@ -122,6 +193,8 @@ export const useChecklist = () => {
       };
 
       const nextSeen: SeenState = { ...seenBirds, [speciesNumber]: true };
+
+      // keep old Date Seen behavior intact
       const nextDates: DatesState = { ...dates };
       if (!nextDates[speciesNumber]) nextDates[speciesNumber] = ts;
 
@@ -132,38 +205,47 @@ export const useChecklist = () => {
 
       await saveCache(nextSeen, notes, nextDates, nextCounts, nextLast);
 
-      /* ---- if not logged in, stop here (local only) ---- */
-      if (!userId) return;
+      // not signed in: keep local only, queue it
+      if (!userId) {
+        const client_event_id = generateUUID();
+        await enqueuePending({ client_event_id, species_number: speciesNumber, seen_at: ts });
+        setSyncStatus('error');
+        setLastSyncError('Not signed in. Saved locally.');
+        return;
+      }
 
       const client_event_id = generateUUID();
 
       setSyncStatus('syncing');
+      setLastSyncError('');
 
       try {
-        const { data, error, status } = await supabase
-          .from('sightings')
-          .insert({
-            user_id: userId,
-            species_number: speciesNumber,
-            seen_at: ts,
-            client_event_id,
-          });
+        const { data, error, status } = await supabase.from('sightings').insert({
+          user_id: userId,
+          species_number: speciesNumber,
+          seen_at: ts,
+          client_event_id,
+        });
 
         console.log('SIGHTINGS INSERT RESULT', { status, error, data });
 
         if (error) {
-          console.error('Insert failed:', error);
+          // queue for retry
+          await enqueuePending({ client_event_id, species_number: speciesNumber, seen_at: ts });
           setSyncStatus('error');
+          setLastSyncError(error.message ?? 'Unknown error');
           return;
         }
 
         setSyncStatus('idle');
       } catch (e) {
-        console.error('Insert threw:', e);
+        // queue for retry
+        await enqueuePending({ client_event_id, species_number: speciesNumber, seen_at: ts });
         setSyncStatus('error');
+        setLastSyncError(String(e));
       }
     },
-    [dates, getUserId, lastSeen, notes, saveCache, seenBirds, sightingsCount]
+    [dates, enqueuePending, getUserId, lastSeen, notes, saveCache, seenBirds, sightingsCount]
   );
 
   /* ------------------------------------------------------------------ */
@@ -185,20 +267,11 @@ export const useChecklist = () => {
     [dates, lastSeen, logSighting, notes, saveCache, seenBirds, sightingsCount]
   );
 
-  const isSeen = useCallback(
-    (speciesNumber: number) => !!seenBirds[speciesNumber],
-    [seenBirds]
-  );
+  const isSeen = useCallback((speciesNumber: number) => !!seenBirds[speciesNumber], [seenBirds]);
 
-  const getNotes = useCallback(
-    (speciesNumber: number) => notes[speciesNumber] || '',
-    [notes]
-  );
+  const getNotes = useCallback((speciesNumber: number) => notes[speciesNumber] || '', [notes]);
 
-  const getDateSeen = useCallback(
-    (speciesNumber: number) => dates[speciesNumber] || '',
-    [dates]
-  );
+  const getDateSeen = useCallback((speciesNumber: number) => dates[speciesNumber] || '', [dates]);
 
   const updateNotes = useCallback(
     async (speciesNumber: number, value: string) => {
@@ -225,47 +298,57 @@ export const useChecklist = () => {
     setSightingsCount({});
     setLastSeen({});
     setSyncStatus('idle');
+    setLastSyncError('');
 
     await saveCache({}, {}, {}, {}, {});
+    await setPending([]);
 
     const userId = await getUserId();
     if (!userId) return;
 
     setSyncStatus('syncing');
-    const { error } = await supabase
-      .from('sightings')
-      .delete()
-      .eq('user_id', userId);
+    const { error } = await supabase.from('sightings').delete().eq('user_id', userId);
 
-    setSyncStatus(error ? 'error' : 'idle');
-  }, [getUserId, saveCache]);
+    if (error) {
+      setSyncStatus('error');
+      setLastSyncError(error.message ?? 'Unknown error');
+      return;
+    }
+
+    setSyncStatus('idle');
+  }, [getUserId, saveCache, setPending]);
 
   const getSightingsCount = useCallback(
     (speciesNumber: number) => sightingsCount[speciesNumber] ?? 0,
     [sightingsCount]
   );
 
-  const getLastSeen = useCallback(
-    (speciesNumber: number) => lastSeen[speciesNumber] || '',
-    [lastSeen]
-  );
+  const getLastSeen = useCallback((speciesNumber: number) => lastSeen[speciesNumber] || '', [lastSeen]);
 
-  const seenCount = useMemo(
-    () => Object.values(seenBirds).filter(Boolean).length,
-    [seenBirds]
-  );
+  const seenCount = useMemo(() => Object.values(seenBirds).filter(Boolean).length, [seenBirds]);
 
   /* ------------------------------------------------------------------ */
   /* Init                                                               */
   /* ------------------------------------------------------------------ */
 
   useEffect(() => {
-    loadCache().finally(() => setIsLoading(false));
-  }, [loadCache]);
+    const init = async () => {
+      try {
+        await loadCache();
+        // If we have pending and user is signed in, attempt a quick retry on startup
+        const userId = await getUserId();
+        if (userId) await retryPendingSightings();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    init();
+  }, [getUserId, loadCache, retryPendingSightings]);
 
   return {
     isLoading,
     syncStatus,
+    lastSyncError,
 
     toggleSeen,
     isSeen,
@@ -281,5 +364,7 @@ export const useChecklist = () => {
     logSighting,
     getSightingsCount,
     getLastSeen,
+
+    retryPendingSightings,
   };
 };
