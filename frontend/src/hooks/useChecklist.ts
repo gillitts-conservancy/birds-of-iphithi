@@ -2,34 +2,19 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../supabase';
 
-const SEEN_STORAGE_KEY = '@birds_of_iphithi_seen';
-const NOTES_STORAGE_KEY = '@birds_of_iphithi_notes';
-const DATES_STORAGE_KEY = '@birds_of_iphithi_dates';
-
-const SIGHTINGS_COUNT_STORAGE_KEY = '@birds_of_iphithi_sightings_count_v1';
-const LAST_SEEN_STORAGE_KEY = '@birds_of_iphithi_last_seen_v1';
+const SEEN_STORAGE_KEY = '@birds_seen_v1';
+const NOTES_STORAGE_KEY = '@birds_notes_v1';
+const DATES_STORAGE_KEY = '@birds_dates_v1';
+const SIGHTINGS_COUNT_KEY = '@birds_sightings_count_v1';
+const LAST_SEEN_KEY = '@birds_last_seen_v1';
 
 type SyncStatus = 'idle' | 'syncing' | 'error';
 
-interface SeenState {
-  [speciesNumber: number]: boolean;
-}
-
-interface NotesState {
-  [speciesNumber: number]: string;
-}
-
-interface DatesState {
-  [speciesNumber: number]: string; // ISO string
-}
-
-interface SightingsCountState {
-  [speciesNumber: number]: number;
-}
-
-interface LastSeenState {
-  [speciesNumber: number]: string; // ISO timestamptz string
-}
+type SeenState = Record<number, boolean>;
+type NotesState = Record<number, string>;
+type DatesState = Record<number, string>;
+type SightingsCountState = Record<number, number>;
+type LastSeenState = Record<number, string>;
 
 const safeParse = <T,>(raw: string | null, fallback: T): T => {
   if (!raw) return fallback;
@@ -42,18 +27,24 @@ const safeParse = <T,>(raw: string | null, fallback: T): T => {
 
 const nowIso = () => new Date().toISOString();
 
+const generateUUID = () =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
 export const useChecklist = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
 
-  // Existing local checklist state (kept for minimal disruption)
   const [seenBirds, setSeenBirds] = useState<SeenState>({});
   const [notes, setNotes] = useState<NotesState>({});
   const [dates, setDates] = useState<DatesState>({});
-
-  // Option B derived stats (event log)
   const [sightingsCount, setSightingsCount] = useState<SightingsCountState>({});
   const [lastSeen, setLastSeen] = useState<LastSeenState>({});
+
+  /* ------------------------------------------------------------------ */
+  /* Cache helpers                                                      */
+  /* ------------------------------------------------------------------ */
 
   const saveCache = useCallback(
     async (
@@ -67,20 +58,26 @@ export const useChecklist = () => {
         AsyncStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(nextSeen)),
         AsyncStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(nextNotes)),
         AsyncStorage.setItem(DATES_STORAGE_KEY, JSON.stringify(nextDates)),
-        AsyncStorage.setItem(SIGHTINGS_COUNT_STORAGE_KEY, JSON.stringify(nextCounts)),
-        AsyncStorage.setItem(LAST_SEEN_STORAGE_KEY, JSON.stringify(nextLastSeen)),
+        AsyncStorage.setItem(SIGHTINGS_COUNT_KEY, JSON.stringify(nextCounts)),
+        AsyncStorage.setItem(LAST_SEEN_KEY, JSON.stringify(nextLastSeen)),
       ]);
     },
     []
   );
 
   const loadCache = useCallback(async () => {
-    const [seenRaw, notesRaw, datesRaw, countsRaw, lastSeenRaw] = await Promise.all([
+    const [
+      seenRaw,
+      notesRaw,
+      datesRaw,
+      countsRaw,
+      lastSeenRaw,
+    ] = await Promise.all([
       AsyncStorage.getItem(SEEN_STORAGE_KEY),
       AsyncStorage.getItem(NOTES_STORAGE_KEY),
       AsyncStorage.getItem(DATES_STORAGE_KEY),
-      AsyncStorage.getItem(SIGHTINGS_COUNT_STORAGE_KEY),
-      AsyncStorage.getItem(LAST_SEEN_STORAGE_KEY),
+      AsyncStorage.getItem(SIGHTINGS_COUNT_KEY),
+      AsyncStorage.getItem(LAST_SEEN_KEY),
     ]);
 
     const nextSeen = safeParse<SeenState>(seenRaw, {});
@@ -99,68 +96,20 @@ export const useChecklist = () => {
   }, []);
 
   const getUserId = useCallback(async (): Promise<string | null> => {
-    try {
-      const { data } = await supabase.auth.getSession();
-      return data.session?.user?.id ?? null;
-    } catch {
-      return null;
-    }
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user?.id ?? null;
   }, []);
 
-  const refreshSightingsFromSupabase = useCallback(
-    async (userId: string) => {
-      setSyncStatus('syncing');
-
-      const { data, error } = await supabase
-        .from('sightings')
-        .select('species_number, seen_at')
-        .eq('user_id', userId);
-
-      if (error) {
-        setSyncStatus('error');
-        return;
-      }
-
-      const nextCounts: SightingsCountState = {};
-      const nextLast: LastSeenState = {};
-      const nextSeen: SeenState = { ...seenBirds };
-
-      (data ?? []).forEach((row: any) => {
-        const sn = Number(row.species_number);
-        if (!Number.isFinite(sn)) return;
-
-        nextCounts[sn] = (nextCounts[sn] ?? 0) + 1;
-
-        const ts = row.seen_at as string | undefined;
-        if (ts) {
-          const prev = nextLast[sn];
-          if (!prev || ts > prev) nextLast[sn] = ts;
-        }
-      });
-
-      // derive checkbox "seen" from events (but do NOT force false for missing)
-      Object.keys(nextCounts).forEach((k) => {
-        const sn = Number(k);
-        if (!Number.isFinite(sn)) return;
-        nextSeen[sn] = true;
-      });
-
-      setSightingsCount(nextCounts);
-      setLastSeen(nextLast);
-      setSeenBirds(nextSeen);
-
-      await saveCache(nextSeen, notes, dates, nextCounts, nextLast);
-      setSyncStatus('idle');
-    },
-    [dates, notes, saveCache, seenBirds]
-  );
+  /* ------------------------------------------------------------------ */
+  /* Option B — log sighting (FULL FIX)                                  */
+  /* ------------------------------------------------------------------ */
 
   const logSighting = useCallback(
     async (speciesNumber: number) => {
       const userId = await getUserId();
       const ts = nowIso();
 
-      // update local derived stats immediately
+      /* ---- update local state immediately ---- */
       const nextCounts: SightingsCountState = {
         ...sightingsCount,
         [speciesNumber]: (sightingsCount[speciesNumber] ?? 0) + 1,
@@ -173,8 +122,6 @@ export const useChecklist = () => {
       };
 
       const nextSeen: SeenState = { ...seenBirds, [speciesNumber]: true };
-
-      // If user never set a date for this species, seed it (keeps old UI working)
       const nextDates: DatesState = { ...dates };
       if (!nextDates[speciesNumber]) nextDates[speciesNumber] = ts;
 
@@ -185,36 +132,44 @@ export const useChecklist = () => {
 
       await saveCache(nextSeen, notes, nextDates, nextCounts, nextLast);
 
-      // Offline / logged out: keep local only (offline queue later)
+      /* ---- if not logged in, stop here (local only) ---- */
       if (!userId) return;
 
+      const client_event_id = generateUUID();
+
       setSyncStatus('syncing');
-       const { data, error, status } = await supabase
-    .from('sightings')
-    .insert({
-      user_id: userId,
-      species_number: speciesNumber,
-      seen_at: ts,
-      client_event_id,
-    });
 
-console.log('SIGHTINGS INSERT RESULT', { status, error, data });
+      try {
+        const { data, error, status } = await supabase
+          .from('sightings')
+          .insert({
+            user_id: userId,
+            species_number: speciesNumber,
+            seen_at: ts,
+            client_event_id,
+          });
 
+        console.log('SIGHTINGS INSERT RESULT', { status, error, data });
 
-      if (error) {
-        console.error('Failed to insert sighting:', error);
+        if (error) {
+          console.error('Insert failed:', error);
+          setSyncStatus('error');
+          return;
+        }
+
+        setSyncStatus('idle');
+      } catch (e) {
+        console.error('Insert threw:', e);
         setSyncStatus('error');
-        return;
       }
-
-      setSyncStatus('idle');
     },
     [dates, getUserId, lastSeen, notes, saveCache, seenBirds, sightingsCount]
   );
 
-  // Checkbox behaviour (minimal disruption):
-  // ON -> logs one sighting event
-  // OFF -> local-only (does not delete event history)
+  /* ------------------------------------------------------------------ */
+  /* Existing checklist behaviour                                       */
+  /* ------------------------------------------------------------------ */
+
   const toggleSeen = useCallback(
     async (speciesNumber: number) => {
       const wasSeen = !!seenBirds[speciesNumber];
@@ -223,21 +178,31 @@ console.log('SIGHTINGS INSERT RESULT', { status, error, data });
         return;
       }
 
-      const nextSeen: SeenState = { ...seenBirds, [speciesNumber]: false };
+      const nextSeen = { ...seenBirds, [speciesNumber]: false };
       setSeenBirds(nextSeen);
       await saveCache(nextSeen, notes, dates, sightingsCount, lastSeen);
     },
     [dates, lastSeen, logSighting, notes, saveCache, seenBirds, sightingsCount]
   );
 
-  const isSeen = useCallback((speciesNumber: number) => !!seenBirds[speciesNumber], [seenBirds]);
+  const isSeen = useCallback(
+    (speciesNumber: number) => !!seenBirds[speciesNumber],
+    [seenBirds]
+  );
 
-  const getNotes = useCallback((speciesNumber: number) => notes[speciesNumber] || '', [notes]);
-  const getDateSeen = useCallback((speciesNumber: number) => dates[speciesNumber] || '', [dates]);
+  const getNotes = useCallback(
+    (speciesNumber: number) => notes[speciesNumber] || '',
+    [notes]
+  );
+
+  const getDateSeen = useCallback(
+    (speciesNumber: number) => dates[speciesNumber] || '',
+    [dates]
+  );
 
   const updateNotes = useCallback(
     async (speciesNumber: number, value: string) => {
-      const nextNotes: NotesState = { ...notes, [speciesNumber]: value };
+      const nextNotes = { ...notes, [speciesNumber]: value };
       setNotes(nextNotes);
       await saveCache(seenBirds, nextNotes, dates, sightingsCount, lastSeen);
     },
@@ -246,7 +211,7 @@ console.log('SIGHTINGS INSERT RESULT', { status, error, data });
 
   const updateDate = useCallback(
     async (speciesNumber: number, value: string) => {
-      const nextDates: DatesState = { ...dates, [speciesNumber]: value };
+      const nextDates = { ...dates, [speciesNumber]: value };
       setDates(nextDates);
       await saveCache(seenBirds, notes, nextDates, sightingsCount, lastSeen);
     },
@@ -267,13 +232,12 @@ console.log('SIGHTINGS INSERT RESULT', { status, error, data });
     if (!userId) return;
 
     setSyncStatus('syncing');
-    const { error } = await supabase.from('sightings').delete().eq('user_id', userId);
-    if (error) {
-      console.error('Failed to reset sightings:', error);
-      setSyncStatus('error');
-      return;
-    }
-    setSyncStatus('idle');
+    const { error } = await supabase
+      .from('sightings')
+      .delete()
+      .eq('user_id', userId);
+
+    setSyncStatus(error ? 'error' : 'idle');
   }, [getUserId, saveCache]);
 
   const getSightingsCount = useCallback(
@@ -286,23 +250,18 @@ console.log('SIGHTINGS INSERT RESULT', { status, error, data });
     [lastSeen]
   );
 
-  const seenCount = useMemo(() => Object.values(seenBirds).filter(Boolean).length, [seenBirds]);
+  const seenCount = useMemo(
+    () => Object.values(seenBirds).filter(Boolean).length,
+    [seenBirds]
+  );
+
+  /* ------------------------------------------------------------------ */
+  /* Init                                                               */
+  /* ------------------------------------------------------------------ */
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        await loadCache();
-        const userId = await getUserId();
-        if (userId) await refreshSightingsFromSupabase(userId);
-      } catch (e) {
-        console.error('useChecklist init failed:', e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    loadCache().finally(() => setIsLoading(false));
+  }, [loadCache]);
 
   return {
     isLoading,
@@ -319,7 +278,6 @@ console.log('SIGHTINGS INSERT RESULT', { status, error, data });
     resetAll,
     seenCount,
 
-    // Option B
     logSighting,
     getSightingsCount,
     getLastSeen,
