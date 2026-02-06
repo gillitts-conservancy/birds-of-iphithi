@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   StatusBar,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,7 +20,7 @@ import { useAuth } from '../src/context/AuthContext';
 
 export default function Index() {
   const insets = useSafeAreaInsets();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   const {
     isLoading,
@@ -34,6 +33,10 @@ export default function Index() {
     resetAll,
     seenCount,
     syncStatus,
+
+    // NEW
+    lastSyncError,
+    retryPendingSightings,
 
     // Option B
     logSighting,
@@ -67,7 +70,6 @@ export default function Index() {
     setSelectedSize(size);
   };
 
-  // FIXED: h !== habitat (was c !== habitat)
   const handleHabitatToggle = (habitat: BirdHabitat) => {
     setSelectedHabitats((prev) =>
       prev.includes(habitat) ? prev.filter((h) => h !== habitat) : [...prev, habitat]
@@ -225,7 +227,6 @@ export default function Index() {
         renderItem={renderBirdCard}
         style={styles.list}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 16 }]}
-        ListEmptyComponent={<View style={styles.emptyFill} />}
       />
 
       <BirdDetailModal
@@ -237,6 +238,8 @@ export default function Index() {
         sightingsCount={selectedSightingsCount}
         lastSeen={selectedLastSeen}
         syncStatus={syncStatus}
+        lastSyncError={lastSyncError}
+        onRetrySync={retryPendingSightings}
         onClose={() => setSelectedBird(null)}
         onToggleSeen={() => selectedBird && toggleSeen(selectedBird.speciesNumber)}
         onUpdateNotes={(v) => selectedBird && updateNotes(selectedBird.speciesNumber, v)}
@@ -263,5 +266,4 @@ const styles = StyleSheet.create({
   filterHint: { fontSize: 12, color: '#aaa', textAlign: 'center', paddingVertical: 6, backgroundColor: '#1f1f1f' },
   list: { flex: 1, backgroundColor: BG },
   listContent: { flexGrow: 1, backgroundColor: BG },
-  emptyFill: { flex: 1, backgroundColor: BG },
 });
